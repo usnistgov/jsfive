@@ -36,7 +36,7 @@ export function dtype_getter(dtype_str) {
   if (/S/.test(dtype_str)) {
     // string type
     getter = "getString";
-    nbytes = ((dtype_str.match(/S(\d*)/) || [])[1] || 1);
+    nbytes = ((dtype_str.match(/S(\d*)/) || [])[1] || 1) | 0;
   }
   else {
     let [_, fstr, bytestr] = dtype_str.match(/[<>=!@]?(i|u|f)(\d*)/);

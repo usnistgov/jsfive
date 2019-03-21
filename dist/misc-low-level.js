@@ -152,8 +152,7 @@ export class GlobalHeap {
           break
         }
         offset += GLOBAL_HEAP_OBJECT_SIZE;
-        let fmt = '<' + info.get('object_size').toFixed() + 's';
-        let obj_data = struct.unpack_from(fmt, this.heap_data, offset)[0];
+        let obj_data = this.heap_data.slice(offset, offset + info.get('object_size'));
         this._objects.set(info.get('object_index'), obj_data);
         offset += _padded_size(info.get('object_size'));
       }

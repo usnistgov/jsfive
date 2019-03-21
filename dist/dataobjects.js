@@ -206,9 +206,8 @@ export class DataObjects {
     }
 
     let ndims = header.get('dimensionality');
-    let dim_sizes = struct.unpack_from('<' + (ndims * 2).toFixed() + 'I', buf, offset)
-      .filter(function(_, i) { return i%2 != 0 }); // use odd-numbered, picking lower 32-bit integer
-
+    let dim_sizes = struct.unpack_from('<' + (ndims).toFixed() + 'Q', buf, offset);
+    
     //# Dimension maximum size follows if header['flags'] bit 0 set
     //# Permutation index follows if header['flags'] bit 1 set
     return dim_sizes
@@ -222,13 +221,15 @@ export class DataObjects {
       for (var i=0; i<count; i++) {
         if (dtype_class == 'VLEN_STRING') {
           var [_, _, character_set] = dtype;
-          var [_, vlen_data] = this._vlen_size_and_data(buf, offset);
+          var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
+          let fmt = '<' + vlen.toFixed() + 's';
+          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
           if (character_set == 0) {
             //# ascii character set, return as bytes
-            value[i] = vlen_data;
+            value[i] = str_data;
           }
           else {
-            value[i] = decodeURIComponent(escape(vlen_data));
+            value[i] = decodeURIComponent(escape(str_data));
           }
           offset += 16
         }
