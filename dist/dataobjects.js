@@ -604,16 +604,9 @@ export class DataObjects {
     if ((version == 1) || (version == 2)) {
       dims = arg1;
       layout_class = arg2;
-      property_offset = msg_offset;
-      property_offset += struct.calcsize('<BBB');
-      if (layout_class == 1) {
-        //# reserved fields: 1 byte, 1 long
-        property_offset += struct.calcsize('<BII');
-      }
-      else if (layout_class == 2) {
-        //# reserved fields: 1 byte, 1 int
-        property_offset += struct.calcsize('<BI');
-      }
+      // 4 bytes for version, dims, layout class and reserved
+      // then another 4 bytes reserved...
+      property_offset = msg_offset + 8; 
       assert( (layout_class == 1) || (layout_class == 2));
     }
     else if ((version == 3) || (version == 4)) {
