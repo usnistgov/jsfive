@@ -33,7 +33,7 @@ export class SuperBlock {
       this._root_symbol_table = sym_table
       return sym_table.group_offset;
     }
-    else if (self.version == 2 || self.version == 3) {
+    else if (this.version == 2 || this.version == 3) {
       return this._contents.get('root_group_address');
     }
     else {

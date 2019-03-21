@@ -18,7 +18,7 @@ export class DataObjects {
         var [msgs, msg_data, header] = this._parse_v1_objects(fh, offset);
     }
     else if (version_hint == 'O'.charCodeAt(0)) {  //# first character of v2 signature
-        var [msgs, msg_data, header] = this._parse_v2_objects(fh);
+        var [msgs, msg_data, header] = this._parse_v2_objects(fh, offset);
     }
     else {
         throw "InvalidHDF5File('unknown Data Object Header')";
@@ -321,34 +321,97 @@ export class DataObjects {
   }
 
   _parse_v1_objects(buf, offset) {
-      //""" Parse a collection of version 1 Data Objects. """
-      let header = _unpack_struct_from(OBJECT_HEADER_V1, buf, offset)
-      assert(header.get('version') == 1);
-      let total_header_messages = header.get('total_header_messages');
+    //""" Parse a collection of version 1 Data Objects. """
+    let header = _unpack_struct_from(OBJECT_HEADER_V1, buf, offset)
+    assert(header.get('version') == 1);
+    let total_header_messages = header.get('total_header_messages');
 
-      var block_size = header.get('object_header_size');
-      var block_offset = offset + _structure_size(OBJECT_HEADER_V1);
-      var msg_data = buf.slice(block_offset, block_offset + block_size);
-      var object_header_blocks = [[block_offset, block_size]];
-      var current_block = 0;
-      var local_offset = 0;
-      var msgs = new Array(total_header_messages);
-      for (var i=0; i<total_header_messages; i++) {
-        if (local_offset >= block_size) {
-          [block_offset, block_size] = object_header_blocks[++current_block];
-          local_offset = 0;
-        }
-        let msg = _unpack_struct_from(HEADER_MSG_INFO_V1, buf, block_offset + local_offset);
-        let offset_to_message = block_offset + local_offset + HEADER_MSG_INFO_V1_SIZE;
-        msg.set('offset_to_message', offset_to_message);
-        if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
-          var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
-          object_header_blocks.push([fh_off, size]);
-        }
-        local_offset += HEADER_MSG_INFO_V1_SIZE + msg.get('size');
-        msgs[i] = msg;
+    var block_size = header.get('object_header_size');
+    var block_offset = offset + _structure_size(OBJECT_HEADER_V1);
+    var msg_data = buf.slice(block_offset, block_offset + block_size);
+    var object_header_blocks = [[block_offset, block_size]];
+    var current_block = 0;
+    var local_offset = 0;
+    var msgs = new Array(total_header_messages);
+    for (var i=0; i<total_header_messages; i++) {
+      if (local_offset >= block_size) {
+        [block_offset, block_size] = object_header_blocks[++current_block];
+        local_offset = 0;
       }
-      return [msgs, msg_data, header];
+      let msg = _unpack_struct_from(HEADER_MSG_INFO_V1, buf, block_offset + local_offset);
+      let offset_to_message = block_offset + local_offset + HEADER_MSG_INFO_V1_SIZE;
+      msg.set('offset_to_message', offset_to_message);
+      if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
+        var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
+        object_header_blocks.push([fh_off, size]);
+      }
+      local_offset += HEADER_MSG_INFO_V1_SIZE + msg.get('size');
+      msgs[i] = msg;
+    }
+    return [msgs, msg_data, header];
+  }
+
+  _parse_v2_objects(buf, offset) {
+    /* Parse a collection of version 2 Data Objects. */
+
+    var [header, creation_order_size, block_offset] = this._parse_v2_header(buf, offset);
+    offset = block_offset;
+    var msgs = [];
+    var block_size = header.get('size_of_chunk_0');
+    var msg_data = buf.slice(offset, offset += block_size);
+
+    var object_header_blocks = [[block_offset, block_size]];
+    var current_block = 0;
+    var local_offset = 0;
+
+    while (true) {
+      if (local_offset >= block_size) {
+        let next_block = object_header_blocks[++current_block];
+        if (next_block == null) {
+          break
+        }
+        [block_offset, block_size] = next_block;
+        local_offset = 0;
+      }
+      let msg = _unpack_struct_from(HEADER_MSG_INFO_V2, buf, block_offset + local_offset);
+      let offset_to_message = block_offset + local_offset + HEADER_MSG_INFO_V2_SIZE + creation_order_size;
+      msg.set('offset_to_message', offset_to_message);
+      if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
+        var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
+        object_header_blocks.push([fh_off, size]);
+      }
+      local_offset += HEADER_MSG_INFO_V2_SIZE + msg.get('size') + creation_order_size;
+      msgs.push(msg);
+    }
+
+    return [msgs, msg_data, header];
+  }
+
+  _parse_v2_header(buf, offset) {
+    /* Parse a version 2 data object header. */
+    let header = _unpack_struct_from(OBJECT_HEADER_V2, buf, offset);
+    var creation_order_size;
+    offset += _structure_size(OBJECT_HEADER_V2);
+    assert(header.get('version') == 2);
+    if (header.get('flags') & 0b00000100) {
+      creation_order_size = 2;
+    }
+    else {
+      creation_order_size = 0;
+    }
+    assert((header.get('flags') & 0b00010000) == 0);
+    if (header.get('flags') & 0b00100000) {
+      let times = struct.unpack_from('<4I', buf, offset);
+      offset += 16;
+      header.set('access_time', times[0]);
+      header.set('modification_time', times[1]);
+      header.set('change_time', times[2]);
+      header.set('birth_time', times[3]);
+    }
+    let chunk_fmt = ['<B', '<H', '<I', '<Q'][(header.get('flags') & 0b00000011)];
+    header.set('size_of_chunk_0', struct.unpack_from(chunk_fmt, buf, offset)[0]);
+    offset += struct.calcsize(chunk_fmt);
+    return [header, creation_order_size, offset];
   }
 
   get_links() {
@@ -392,13 +455,13 @@ export class DataObjects {
       var [version, flags] = struct.unpack_from('<BB', this.fh, offset);
       offset += 2
       assert(version == 1);
-      assert(flags & 2**0 == 0);
-      assert(flags & 2**1 == 0);
-      assert(flags & 2**3 == 0);
-      assert(flags & 2**4 == 0);
-      if (flags & 2**2) {
+      assert((flags & 0b00000001) == 0);
+      assert((flags & 0b00000010) == 0);
+      assert((flags & 0b00001000) == 0);
+      assert((flags & 0b00010000) == 0);
+      if (flags & 0b00000100) {
         //# creation order present
-        offset += 8
+        offset += 8;
       }
 
       var encoding = 'ascii';
@@ -407,9 +470,9 @@ export class DataObjects {
       offset += 1;
       //let name = this.fh.slice(offset, offset + name_size).decode(encoding)
       let name = struct.unpack_from('<' + name_size.toFixed() + 's', this.fh, offset);
-      offset += name_size
+      offset += name_size;
 
-      let address = struct.unpack_from('<I', this.fh, offset)[0];
+      let address = struct.unpack_from('<Q', this.fh, offset)[0];
       links[name] = address;
     }
     return links
