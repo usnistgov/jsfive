@@ -317,8 +317,8 @@ export class BTreeRawDataChunks {
 function _verify_fletcher32(chunk_buffer) {
   //""" Verify a chunk with a fletcher32 checksum. """
   //# calculate checksums
-  var odd_chunk_buffer = ((chunk_buffer.length % 2) != 0);
-  var data_length = chunk_buffer.length - 4;
+  var odd_chunk_buffer = ((chunk_buffer.byteLength % 2) != 0);
+  var data_length = chunk_buffer.byteLength - 4;
   var view = new DataView64(chunk_buffer);
 
   var sum1 = 0;
