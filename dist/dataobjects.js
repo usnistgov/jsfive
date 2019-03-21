@@ -315,7 +315,7 @@ export class DataObjects {
   get_links() {
     //""" Return a dictionary of link_name: offset """
     let sym_tbl_msgs = this.find_msg_type(SYMBOL_TABLE_MSG_TYPE)
-    if (sym_tbl_msgs) {
+    if (sym_tbl_msgs.length > 0) {
       return this._get_links_from_symbol_tables(sym_tbl_msgs);
     }
     return this._get_links_from_link_msgs()
