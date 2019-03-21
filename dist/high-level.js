@@ -282,6 +282,10 @@ export class Dataset extends Array {
   get dtype() {
     return this._dataobjects.dtype;
   }
+
+  get fillvalue() {
+    return this._dataobjects.fillvalue;
+  }
 }
 
 

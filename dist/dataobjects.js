@@ -125,6 +125,44 @@ export class DataObjects {
     return attrs
   }
 
+  get fillvalue() {
+    /* Fillvalue of the dataset. */
+    let msg = this.find_msg_type(FILLVALUE_MSG_TYPE)[0];
+    var offset = msg.get('offset_to_message');
+    var is_defined;
+    let version = struct.unpack_from('<B', this.fh, offset)[0];
+    var info, size, fillvalue;
+    if (version == 1 || version == 2) {
+      info = _unpack_struct_from(FILLVAL_MSG_V1V2, this.fh, offset);
+      offset += FILLVAL_MSG_V1V2_SIZE;
+      is_defined = info.get('fillvalue_defined');
+    }
+    else if (version == 3) {
+      info = _unpack_struct_from(FILLVAL_MSG_V3, this.fh, offset);
+      offset += FILLVAL_MSG_V3_SIZE
+      is_defined = info.get('flags') & 0b00100000;
+    } else {
+      throw 'InvalidHDF5File("Unknown fillvalue msg version: "' + String(version);
+    }
+    if (is_defined) {
+      size = struct.unpack_from('<I', this.fh, offset)[0];
+      offset += 4;
+    }
+    else {
+      size = 0;
+    }
+
+    if (size) {
+      let [getter, big_endian, size] = dtype_getter(this.dtype);
+      let payload_view = new DataView64(this.fh);
+      fillvalue = payload_view[getter](offset, !big_endian, size);
+    }
+    else {
+      fillvalue = 0;
+    }
+    return fillvalue
+  }
+
   unpack_attribute(offset) {
     //""" Return the attribute name and value. """
 
