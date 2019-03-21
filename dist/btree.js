@@ -252,15 +252,16 @@ export class BTreeRawDataChunks {
       }
 
       else if (filter_id == SHUFFLE_FILTER) {
-        let buffer_size = chunk_buffer.length;
-        var unshuffled_buffer = new ArrayBuffer(buffer_size);
+        let buffer_size = chunk_buffer_out.byteLength;
+        var unshuffled_view = new Uint8Array(buffer_size);
         let step = Math.floor(buffer_size / itemsize);
+        let shuffled_view = new DataView(chunk_buffer_out);
         for (var j=0; j<itemsize; j++) {
           for (var i=0; i<step; i++) {
-            unshuffled_buffer[j + i*itemsize] = chunk_buffer_out[j*step + i];
+            unshuffled_view[j + i*itemsize] = shuffled_view.getUint8(j*step + i);
           }
         }
-        chunk_buffer_out = unshuffled_buffer;
+        chunk_buffer_out = unshuffled_view.buffer;
       }
       else if (filter_id == FLETCH32_FILTER) {
         _verify_fletcher32(chunk_buffer_out);
