@@ -10,7 +10,7 @@ It is only for reading HDF5 files as an ArrayBuffer representation of the file.
 
 ## Dependencies
  * ES6 module support (current versions of Firefox and Chrome work)
- * zlib (such as https://github.com/nodeca/pako)
+ * zlib from https://github.com/nodeca/pako is included in the web_modules directory (via @pika/web)
 
 ## Limitations
 * not all datatypes that are supported by pyfive (through numpy) are supported (yet), though dtypes like u8, f4, S12, i4 are supported.
