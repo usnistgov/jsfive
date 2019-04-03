@@ -1,9 +1,12 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, DataView64} from './core.js';
-/* 
-  requires that zlib.decompress (takes ArrayBuffer, returns ArrayBuffer) 
-  is in the global namespace 
-*/
-if (!zlib || !zlib.decompress) { throw "ERROR: HDF5-js btree module requires zlib.decompress to be defined" }
+import {default as pako} from 'https://www.unpkg.com/pako-es@1.0.9/index.js';
+
+const zlib = {
+  decompress: function(buf) {
+    let input_array = new Uint8Array(buf);
+    return pako.inflate(input_array).buffer;
+    }
+};
 
 export class BTree {
   /*
