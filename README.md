@@ -19,9 +19,9 @@ It is only for reading HDF5 files as an ArrayBuffer representation of the file.
 * currently the getitem syntax is not supported, but it will likely be soon, for browsers that support object Proxy (not IE), so you have to do say f.get('entry/dataset') instead of f['entry/dataset']
 
 ## Installation/use
-Clone the repo here and put the 'dist' folder somewhere accessible, then in your main module (entrypoint) for your app import it as 
+Clone this repo to somewhere accessible to your webpage, then in your main module (entrypoint) for your app import it as e.g. 
 
-    import * as hdf5 from './jsfive/dist/high-level.js';
+    import * as hdf5 from './jsfive/index.js';
 
 Then you can start using it with data from a URL, e.g. 
 
