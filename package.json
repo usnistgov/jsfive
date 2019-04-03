@@ -1,0 +1,25 @@
+{
+  "name": "jsfive",
+  "version": "0.1.0",
+  "description": "A pure javascript HDF5 file reader, based on pyfive",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/usnistgov/jsfive.git"
+  },
+  "keywords": [
+    "hdf5",
+    "javascript",
+    "es6",
+    "browser"
+  ],
+  "author": "Brian B. Maranville",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "bugs": {
+    "url": "https://github.com/usnistgov/jsfive/issues"
+  },
+  "homepage": "https://github.com/usnistgov/jsfive#readme"
+}
