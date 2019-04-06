@@ -213,6 +213,15 @@ export class DataView64 extends DataView {
     }
     return decodeURIComponent(escape(output));
   }
+
+  getVLENStruct(byteOffset, littleEndian, length){
+    // get the addressing information for VLEN data
+    let item_size = this.getUint32(byteOffset, littleEndian);
+    let collection_address = this.getUint64(byteOffset + 4, littleEndian);
+    let object_index = this.getUint32(byteOffset + 12, littleEndian);
+    return [item_size, collection_address, object_index];
+  }
+
   generate_getFixedString(length) {
     var getter = function(byteoffset, littleEndian) {
       var output = "";
@@ -239,4 +248,10 @@ function getUint64(dataview, byteOffset, littleEndian) {
 
   return combined;
 }
+
+var VLEN_ADDRESS = new Map([
+  ['item_size', 'I'],
+  ['collection_address', 'Q'],  //# 8 byte addressing,
+  ['object_index', 'I'],
+]);
 
