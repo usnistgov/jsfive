@@ -145,6 +145,7 @@ export class BTreeRawDataChunks {
   construct_data_from_chunks(chunk_shape, data_shape, dtype, filter_pipeline) {
     //""" Build a complete data array from chunks. """
     var true_dtype;
+    var item_getter, item_big_endian, item_size;
     if (dtype instanceof Array) {
       true_dtype = dtype;
       let dtype_class = dtype[0];
@@ -153,7 +154,15 @@ export class BTreeRawDataChunks {
         if (size != 8) {
           throw "NotImplementedError('Unsupported Reference type')";
         }
-        var dtype = '<u8'
+        var dtype = '<u8';
+        item_getter = 'getUint64';
+        item_big_endian = false;
+        item_size = 8;
+      }
+      else if (dtype_class == 'VLEN_STRING' || dtype_class == 'VLEN_SEQUENCE') {
+        item_getter = 'getVLENStruct';
+        item_big_endian = false;
+        item_size = 16;
       }
       else {
         throw "NotImplementedError('datatype not implemented')";
@@ -161,6 +170,7 @@ export class BTreeRawDataChunks {
     }
     else {
       true_dtype = null;
+      [item_getter, item_big_endian, item_size] = dtype_getter(dtype);
     }
 
     //# create array to store data
@@ -180,7 +190,6 @@ export class BTreeRawDataChunks {
       return s
     }).reverse();
     var data = new Array(data_size);
-    let [item_getter, item_big_endian, item_size] = dtype_getter(dtype);
     let chunk_buffer_size = chunk_size * item_size;
     for (var node of this.all_nodes[0]) {
       //console.log(node);

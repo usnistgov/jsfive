@@ -506,14 +506,13 @@ export class DataObjects {
       let size = this.shape.reduce(function(a,b) { return a * b }, 1); // int(np.product(shape))
       return new Array(size);
     }
-
+    var fullsize = this.shape.reduce(function(a,b) { return a * b }, 1);
     if (!(this.dtype instanceof Array)) {
       //# return a memory-map to the stored array with copy-on-write
       //return np.memmap(self.fh, dtype=self.dtype, mode='c',
       //                 offset=data_offset, shape=self.shape, order='C')
       let dtype = this.dtype;
       if (/[<>=!@\|]?(i|u|f|S)(\d*)/.test(dtype)) {
-        let fullsize = this.shape.reduce(function(a,b) { return a * b }, 1);
         let [item_getter, item_is_big_endian, item_size] = dtype_getter(dtype);
         let output = new Array(fullsize);
         let view = new DataView64(this.fh);
@@ -533,7 +532,6 @@ export class DataObjects {
         if (size != 8) {
             throw "NotImplementedError('Unsupported Reference type')";
         }
-        let fullsize = this.shape.reduce(function(a,b) { return a * b }, 1);
         let ref_addresses = this.fh.slice(data_offset, data_offset + fullsize);
 
         //ref_addresses = np.memmap(
@@ -541,6 +539,24 @@ export class DataObjects {
         //    shape=self.shape, order='C')
         //return np.array([Reference(addr) for addr in ref_addresses])
         return ref_addresses;
+      }
+      else if (dtype_class == 'VLEN_STRING') {
+        var [_, _, character_set] = dtype;
+        var value = [];
+        for (var i=0; i<fullsize; i++) {
+          var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
+          let fmt = '<' + vlen.toFixed() + 's';
+          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
+          if (character_set == 0) {
+            //# ascii character set, return as bytes
+            value[i] = str_data;
+          }
+          else {
+            value[i] = decodeURIComponent(escape(str_data));
+          }
+          data_offset += 16;
+        }
+        return value;
       }
       else {
         throw "NotImplementedError('datatype not implemented')";
@@ -553,8 +569,38 @@ export class DataObjects {
     this._get_chunk_params();
     var chunk_btree = new BTreeRawDataChunks(
       this.fh, this._chunk_address, this._chunk_dims);
-    return chunk_btree.construct_data_from_chunks(
+    let data = chunk_btree.construct_data_from_chunks(
       this.chunks, this.shape, this.dtype, this.filter_pipeline);
+    if (this.dtype instanceof Array && /^VLEN/.test(this.dtype[0])) {
+      // VLEN data
+      let dtype_class = this.dtype[0];
+      for (var i=0; i<data.length; i++) {
+        let [item_size, gheap_address, object_index] = data[i];
+        var gheap;
+        if (!(gheap_address in this._global_heaps)) {
+          //# load the global heap and cache the instance
+          gheap = new GlobalHeap(this.fh, gheap_address);
+          this._global_heaps[gheap_address] = gheap;
+        }
+        else {
+          gheap = this._global_heaps[gheap_address];
+        }
+        let vlen_data = gheap.objects.get(object_index);
+        if (dtype_class == 'VLEN_STRING') {
+          let character_set = this.dtype[2];
+          let fmt = '<' + item_size.toFixed() + 's';
+          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
+          if (character_set == 0) {
+            //# ascii character set, return as bytes
+            data[i] = str_data;
+          }
+          else {
+            data[i] = decodeURIComponent(escape(str_data));
+          }
+        }
+      }
+    }
+    return data;
   }
 
   _get_chunk_params() {
