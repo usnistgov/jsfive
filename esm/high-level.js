@@ -17,7 +17,7 @@ export class Group {
     parent : Group
         Group instance containing this group.
   */
-  constructor(name, dataobjects, parent) {
+  constructor(name, dataobjects, parent, getterProxy=true) {
     if (parent == null) {
       this.parent = this;
       this.file = this;
@@ -32,6 +32,9 @@ export class Group {
     this._dataobjects = dataobjects;
     this._attrs = null;  // cached property
     this._keys = null;
+    if (getterProxy) {
+      return new Proxy(this, groupGetHandler);
+    }
   }
 
   get keys() {
@@ -153,6 +156,16 @@ export class Group {
   }
 
 }
+
+const groupGetHandler = {
+  get: function(target, prop, receiver) {
+    if (prop in target) {
+      return target[prop];
+    }
+    return target.get(prop);
+  }
+};
+
 
 export class File extends Group {
   /*
