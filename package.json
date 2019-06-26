@@ -27,6 +27,10 @@
     "pako-es": "^1.0.9"
   },
   "devDependencies": {
-    "@pika/web": "^0.4.1"
+    "@pika/web": "^0.4.1",
+    "parcel": "^1.12.3"
+  },
+  "scripts": {
+    "build": "parcel build index.js -o hdf5.js"
   }
 }
