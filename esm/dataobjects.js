@@ -272,8 +272,8 @@ export class DataObjects {
           offset += 16
         }
         else if (dtype_class == 'REFERENCE') {
-          var [address, _] = struct.unpack_from('<II', buf, offset);
-          value[i] = Reference(address);
+          var address = struct.unpack_from('<Q', buf, offset);
+          value[i] = address;
           offset += 8;
         }
         else if (dtype_class == "VLEN_SEQUENCE") {

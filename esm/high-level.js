@@ -17,7 +17,7 @@ export class Group {
     parent : Group
         Group instance containing this group.
   */
-  constructor(name, dataobjects, parent, getterProxy=true) {
+  constructor(name, dataobjects, parent, getterProxy=false) {
     if (parent == null) {
       this.parent = this;
       this.file = this;
