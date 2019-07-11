@@ -145,7 +145,7 @@ export class GlobalHeap {
     if (this._objects == null) {
       this._objects = new Map();
       var offset = 0;
-      while (offset < this.heap_data.byteLength) {
+      while (offset <= this.heap_data.byteLength - GLOBAL_HEAP_OBJECT_SIZE) {
         let info = _unpack_struct_from(
           GLOBAL_HEAP_OBJECT, this.heap_data, offset);
         if (info.get('object_index') == 0) {
