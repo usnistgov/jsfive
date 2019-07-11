@@ -23,6 +23,10 @@ Clone this repo to somewhere accessible to your webpage, then in your main modul
 
     import * as hdf5 from './jsfive/index.js';
 
+If you want to use it as an old-style ES5 script, you can use the pre-built library in /dist/hdf5.js e.g.
+
+    <script src="https://cdn.jsdelivr.net/gh/usnistgov/jsfive@master/dist/hdf5.js"></script>
+    
 Then you can start using it with data from a URL, e.g. 
 
     fetch(file_url)
