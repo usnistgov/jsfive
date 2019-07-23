@@ -541,7 +541,7 @@ export class DataObjects {
         return ref_addresses;
       }
       else if (dtype_class == 'VLEN_STRING') {
-        var [_, _, character_set] = dtype;
+        var [_, _, character_set] = this.dtype;
         var value = [];
         for (var i=0; i<fullsize; i++) {
           var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
