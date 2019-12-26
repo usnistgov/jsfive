@@ -8,6 +8,8 @@ Not all features of HDF5 are supported, but some key ones that are:
 
 It is only for reading HDF5 files as an ArrayBuffer representation of the file.
 
+See a live [demo](https://ncnr.nist.gov/ncnrdata/view/nexus-hdf-viewer.html?pathlist=ncnrdata+ng7sans+201911+nonims83+data&filename=sans102051.nxs.ng7): center pane shows collapsible folder structure and right panel shows data and attributes.
+
 ## Dependencies
  * ES6 module support (current versions of Firefox and Chrome work)
  * zlib from https://github.com/nodeca/pako is included in the web_modules directory (via @pika/web)
