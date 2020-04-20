@@ -1,6 +1,6 @@
 {
   "name": "@usnistgov/jsfive",
-  "version": "0.1.6",
+  "version": "0.1.8",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "index.js",
   "module": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/usnistgov/jsfive.git"
+    "url": "https://github.com/usnistgov/jsfive"
   },
   "keywords": [
     "hdf5",
@@ -31,6 +31,6 @@
     "parcel": "^1.12.3"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "access": "public"
   }
 }
