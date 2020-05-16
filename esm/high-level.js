@@ -94,7 +94,17 @@ export class Group {
     }
 
     var obj_name = normpath(this.name + '/' + next_obj);
-    var dataobjs = new DataObjects(this.file._fh, this._links[next_obj]);
+    let link_target = this._links[next_obj];
+
+    if (typeof(link_target) == "string") {
+      try {
+        return this.get(link_target)
+      } catch (error) {
+        return null
+      } 
+    }
+
+    var dataobjs = new DataObjects(this.file._fh, link_target);
     if (dataobjs.is_dataset) {
       if (additional_obj != '.') {
         throw obj_name + ' is a dataset, not a group';

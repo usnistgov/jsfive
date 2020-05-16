@@ -437,7 +437,7 @@ export class DataObjects {
     for (var symbol_table_address of btree.symbol_table_addresses()) {
       let table = new SymbolTable(this.fh, symbol_table_address);
       table.assign_name(heap);
-      let new_links = table.get_links();
+      let new_links = table.get_links(heap);
       for (var lk in new_links) {
         links[lk] = new_links[lk];
       }

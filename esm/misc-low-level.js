@@ -112,11 +112,25 @@ export class SymbolTable {
     });
   }
 
-  get_links() {
+  get_links(heap) {
     //""" Return a dictionary of links (dataset/group) and offsets. """
     var links = {}
     this.entries.forEach(function(e) {
-      links[e.get('link_name')] = e.get('object_header_address');
+      let cache_type = e.get('cache_type');
+      let link_name = e.get('link_name');
+      if (cache_type == 0 || cache_type == 1) {
+        links[link_name] = e.get('object_header_address');
+      }
+      else if (cache_type == 2) {
+        let scratch = e.get('scratch');
+        let buf = new ArrayBuffer(4);
+        let bufView = new Uint8Array(buf);
+        for (var i=0; i<4; i++) {
+            bufView[i] = scratch.charCodeAt(i);
+        }
+        let offset = struct.unpack_from('<I', buf, 0)[0];
+        links[link_name] = heap.get_object_name(offset);
+      }
     });
     return links
   }
