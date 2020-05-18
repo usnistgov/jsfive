@@ -1,6 +1,6 @@
 {
   "name": "@usnistgov/jsfive",
-  "version": "0.1.9",
+  "version": "0.2.1",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "index.js",
   "module": "index.js",

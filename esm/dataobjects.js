@@ -258,7 +258,7 @@ export class DataObjects {
       let dtype_class = dtype[0]
       for (var i=0; i<count; i++) {
         if (dtype_class == 'VLEN_STRING') {
-          var [_, _, character_set] = dtype;
+          let character_set = dtype[2];
           var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
           let fmt = '<' + vlen.toFixed() + 's';
           let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
@@ -566,7 +566,7 @@ export class DataObjects {
         return ref_addresses;
       }
       else if (dtype_class == 'VLEN_STRING') {
-        var [_, _, character_set] = this.dtype;
+        let character_set = this.dtype[2];
         var value = [];
         for (var i=0; i<fullsize; i++) {
           var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
