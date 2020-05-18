@@ -453,27 +453,52 @@ export class DataObjects {
     for (var link_msg of link_msgs) {
       let offset = link_msg.get('offset_to_message');
       var [version, flags] = struct.unpack_from('<BB', this.fh, offset);
-      offset += 2
+      offset += 2;
       assert(version == 1);
-      assert((flags & 0b00000001) == 0);
-      assert((flags & 0b00000010) == 0);
-      assert((flags & 0b00001000) == 0);
-      assert((flags & 0b00010000) == 0);
+      let size_of_length_of_link_name = Math.pow((flags & 0b00000011), 2);
+      let link_type_field_present = flags & 0b00000100;
+      let link_name_character_set_field_present = flags & 0b00010000;
+      var link_type;
+      if (link_type_field_present) {
+        link_type = struct.unpack_from('<B', this.fh, offset)[0];
+        offset += 1;
+      }
+      else {
+        link_type = 0;
+      }
+      assert (link_type == 0 || link_type == 1);
       if (flags & 0b00000100) {
         //# creation order present
         offset += 8;
       }
+      var link_name_character_set;
+      if (link_name_character_set_field_present) {
+        link_name_character_set = struct.unpack_from('<B', this.fh, offset)[0];
+        offset += 1;
+      }
+      else {
+        link_name_character_set = 0;
+      }
 
-      var encoding = 'ascii';
+      let encoding = (link_name_character_set == 0) ? 'ascii' : 'utf-8';
 
-      let name_size = struct.unpack_from('<B', this.fh, offset)[0];
-      offset += 1;
-      //let name = this.fh.slice(offset, offset + name_size).decode(encoding)
-      let name = struct.unpack_from('<' + name_size.toFixed() + 's', this.fh, offset);
+      let name_size_fmt = ["<B", "<H", "<I", "<Q"][flags & 3]
+      let name_size = struct.unpack_from(name_size_fmt, this.fh, offset)[0]
+      offset += size_of_length_of_link_name;
+      let name = new TextDecoder(encoding).decode(this.fh.slice(offset, offset+name_size));
       offset += name_size;
 
-      let address = struct.unpack_from('<Q', this.fh, offset)[0];
-      links[name] = address;
+      if (link_type == 0) {
+        //# hard link
+        let address = struct.unpack_from('<Q', this.fh, offset)[0];
+        links[name] = address;
+      }
+      else if (link_type == 1) {
+        //# soft link
+        let length_of_soft_link_value = struct.unpack_from('<H', this.fh, offset)[0];
+        offset += 2;
+        links[name] = new TextDecoder('utf-8').decode(this.fh.slice(offset, offset+length_of_soft_link_value));
+      }
     }
     return links
   }
