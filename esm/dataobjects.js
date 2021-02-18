@@ -456,7 +456,7 @@ export class DataObjects {
       offset += 2;
       assert(version == 1);
       let size_of_length_of_link_name = Math.pow(2, (flags & 0b00000011));
-      let link_type_field_present = flags & 0b00000100;
+      let link_type_field_present = flags & 0b00001000;
       let link_name_character_set_field_present = flags & 0b00010000;
       var link_type;
       if (link_type_field_present) {
