@@ -353,6 +353,8 @@ export class DataObjects {
 
   _parse_v2_objects(buf, offset) {
     /* Parse a collection of version 2 Data Objects. */
+    // NOTE: this is using absolute address even for messages in continuation 
+    // blocks, and not keeping a concatenated message block (unlike pyfive)
 
     var [header, creation_order_size, block_offset] = this._parse_v2_header(buf, offset);
     offset = block_offset;
@@ -365,7 +367,7 @@ export class DataObjects {
     var local_offset = 0;
 
     while (true) {
-      if (local_offset >= block_size) {
+      if (local_offset >= block_size - HEADER_MSG_INFO_V2_SIZE) {
         let next_block = object_header_blocks[++current_block];
         if (next_block == null) {
           break
@@ -378,7 +380,8 @@ export class DataObjects {
       msg.set('offset_to_message', offset_to_message);
       if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
         var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
-        object_header_blocks.push([fh_off, size]);
+        // skip the "OFHC" signature in v2 continuation objects:
+        object_header_blocks.push([fh_off+4, size-4]);
       }
       local_offset += HEADER_MSG_INFO_V2_SIZE + msg.get('size') + creation_order_size;
       msgs.push(msg);
