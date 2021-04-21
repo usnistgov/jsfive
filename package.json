@@ -4,8 +4,15 @@
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "index.js",
   "module": "index.js",
+  "browser": "dist/hdf5.js",
   "scripts": {
-    "build": "parcel build index.js -o hdf5.js"
+    "build": "parcel build index.js --target browser"
+  },
+  "targets": {
+    "browser": {
+      "context": "browser",
+      "outputFormat": "global"
+    }
   },
   "repository": {
     "type": "git",
@@ -27,8 +34,7 @@
     "pako-es": "^1.0.9"
   },
   "devDependencies": {
-    "@pika/web": "^0.4.4",
-    "parcel": "^1.12.4"
+    "parcel": "^2.0.0-beta.2"
   },
   "publishConfig": {
     "access": "public"
