@@ -1,7 +1,7 @@
-import {DatatypeMessage} from './datatype-msg.js';
-import {_structure_size, _padded_size, _unpack_struct_from, struct, dtype_getter, DataView64, assert} from './core.js';
-import {BTree, BTreeRawDataChunks, GZIP_DEFLATE_FILTER, SHUFFLE_FILTER, FLETCH32_FILTER} from './btree.js';
-import {Heap, SymbolTable, GlobalHeap} from './misc-low-level.js';
+import { DatatypeMessage } from './datatype-msg.js';
+import { _structure_size, _padded_size, _unpack_struct_from, struct, dtype_getter, DataView64, assert } from './core.js';
+import { BTreeV1Groups, BTreeV1RawDataChunks, BTreeV2GroupNames, BTreeV2GroupOrders, GZIP_DEFLATE_FILTER, SHUFFLE_FILTER, FLETCH32_FILTER } from './btree.js';
+import { Heap, SymbolTable, GlobalHeap, FractalHeap } from './misc-low-level.js';
 
 export class DataObjects {
   /*
@@ -15,13 +15,13 @@ export class DataObjects {
     let version_hint = struct.unpack_from('<B', fh, offset)[0]
     //fh.seek(offset)
     if (version_hint == 1) {
-        var [msgs, msg_data, header] = this._parse_v1_objects(fh, offset);
+      var [msgs, msg_data, header] = this._parse_v1_objects(fh, offset);
     }
     else if (version_hint == 'O'.charCodeAt(0)) {  //# first character of v2 signature
-        var [msgs, msg_data, header] = this._parse_v2_objects(fh, offset);
+      var [msgs, msg_data, header] = this._parse_v2_objects(fh, offset);
     }
     else {
-        throw "InvalidHDF5File('unknown Data Object Header')";
+      throw "InvalidHDF5File('unknown Data Object Header')";
     }
     this.fh = fh
     this.msgs = msgs
@@ -73,16 +73,16 @@ export class DataObjects {
     let [version, nfilters] = struct.unpack_from('<BB', this.fh, offset);
     offset += struct.calcsize('<BB');
     if (version != 1) {
-        throw 'NotImplementedError("only version 1 filters supported. ")';
+      throw 'NotImplementedError("only version 1 filters supported. ")';
     }
     let [res0, res1] = struct.unpack_from('<HI', this.fh, offset);
     offset += struct.calcsize('<HI');
 
     var filters = []
-    for (var _=0; _<nfilters; _++) {
+    for (var _ = 0; _ < nfilters; _++) {
 
       let filter_info = _unpack_struct_from(
-          FILTER_PIPELINE_DESCR_V1, this.fh, offset);
+        FILTER_PIPELINE_DESCR_V1, this.fh, offset);
       offset += FILTER_PIPELINE_DESCR_V1_SIZE;
 
       let padded_name_length = _padded_size(filter_info.get('name_length'), 8);
@@ -108,14 +108,14 @@ export class DataObjects {
 
   find_msg_type(msg_type) {
     //""" Return a list of all messages of a given type. """
-    return this.msgs.filter(function(m) { return m.get('type') == msg_type });
+    return this.msgs.filter(function (m) { return m.get('type') == msg_type });
   }
 
   get_attributes() {
     //""" Return a dictionary of all attributes. """
     let attrs = {};
     let attr_msgs = this.find_msg_type(ATTRIBUTE_MSG_TYPE);
-    for (var msg of attr_msgs) {
+    for (let msg of attr_msgs) {
       let offset = msg.get('offset_to_message');
       let [name, value] = this.unpack_attribute(offset);
       attrs[name] = value;
@@ -172,14 +172,14 @@ export class DataObjects {
     var attr_map, padding_multiple;
     if (version == 1) {
       attr_map = _unpack_struct_from(
-          ATTR_MSG_HEADER_V1, this.fh, offset);
+        ATTR_MSG_HEADER_V1, this.fh, offset);
       assert(attr_map.get('version') == 1);
       offset += ATTR_MSG_HEADER_V1_SIZE;
       padding_multiple = 8;
     }
     else if (version == 3) {
       attr_map = _unpack_struct_from(
-          ATTR_MSG_HEADER_V3, this.fh, offset)
+        ATTR_MSG_HEADER_V3, this.fh, offset)
       assert(attr_map.get('version') == 3);
       offset += ATTR_MSG_HEADER_V3_SIZE;
       padding_multiple = 1    //# no padding
@@ -200,16 +200,16 @@ export class DataObjects {
     try {
       dtype = new DatatypeMessage(this.fh, offset).dtype;
     }
-    catch(e) {
+    catch (e) {
       console.log('Attribute ' + name + ' type not implemented, set to null.');
       return [name, null];
     }
-    
+
     offset += _padded_size(attr_map.get('datatype_size'), padding_multiple);
 
     //# read in the dataspace information
     let shape = this.determine_data_shape(this.fh, offset);
-    let items = shape.reduce(function(a,b) { return a * b }, 1); // int(np.product(shape))
+    let items = shape.reduce(function (a, b) { return a * b }, 1); // int(np.product(shape))
     offset += _padded_size(attr_map.get('dataspace_size'), padding_multiple)
 
     //# read in the value(s)
@@ -236,7 +236,7 @@ export class DataObjects {
     }
     else if (version == 2) {
       header = _unpack_struct_from(DATASPACE_MSG_HEADER_V2, buf, offset)
-      assert( header.get('version') == 2);
+      assert(header.get('version') == 2);
       offset += DATASPACE_MSG_HEADER_V2_SIZE;
     }
     else {
@@ -245,7 +245,7 @@ export class DataObjects {
 
     let ndims = header.get('dimensionality');
     let dim_sizes = struct.unpack_from('<' + (ndims).toFixed() + 'Q', buf, offset);
-    
+
     //# Dimension maximum size follows if header['flags'] bit 0 set
     //# Permutation index follows if header['flags'] bit 1 set
     return dim_sizes
@@ -256,7 +256,7 @@ export class DataObjects {
     var value = new Array(count);
     if (dtype instanceof Array) {
       let dtype_class = dtype[0]
-      for (var i=0; i<count; i++) {
+      for (var i = 0; i < count; i++) {
         if (dtype_class == 'VLEN_STRING') {
           let character_set = dtype[2];
           var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
@@ -290,7 +290,7 @@ export class DataObjects {
     else {
       let [getter, big_endian, size] = dtype_getter(dtype);
       let view = new DataView64(buf, 0);
-      for (var i=0; i<count; i++) {
+      for (var i = 0; i < count; i++) {
         value[i] = view[getter](offset, !big_endian, size);
         offset += size;
       }
@@ -306,7 +306,7 @@ export class DataObjects {
     //# Data with a variable-length datatype is stored in the
     //# global heap of the HDF5 file. Global heap identifiers are
     //# stored in the data object storage.
-    let gheap_id = _unpack_struct_from(GLOBAL_HEAP_ID, buf, offset+4)
+    let gheap_id = _unpack_struct_from(GLOBAL_HEAP_ID, buf, offset + 4)
     let gheap_address = gheap_id.get('collection_address');
     assert(gheap_id.get("collection_address") < Number.MAX_SAFE_INTEGER);
     var gheap;
@@ -333,7 +333,7 @@ export class DataObjects {
     var current_block = 0;
     var local_offset = 0;
     var msgs = new Array(total_header_messages);
-    for (var i=0; i<total_header_messages; i++) {
+    for (var i = 0; i < total_header_messages; i++) {
       if (local_offset >= block_size) {
         [block_offset, block_size] = object_header_blocks[++current_block];
         local_offset = 0;
@@ -381,7 +381,7 @@ export class DataObjects {
       if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
         var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
         // skip the "OFHC" signature in v2 continuation objects:
-        object_header_blocks.push([fh_off+4, size-4]);
+        object_header_blocks.push([fh_off + 4, size - 4]);
       }
       local_offset += HEADER_MSG_INFO_V2_SIZE + msg.get('size') + creation_order_size;
       msgs.push(msg);
@@ -419,11 +419,168 @@ export class DataObjects {
 
   get_links() {
     //""" Return a dictionary of link_name: offset """
-    let sym_tbl_msgs = this.find_msg_type(SYMBOL_TABLE_MSG_TYPE)
-    if (sym_tbl_msgs.length > 0) {
-      return this._get_links_from_symbol_tables(sym_tbl_msgs);
+    return Object.fromEntries(this.iter_links());
+  }
+  //   let sym_tbl_msgs = this.find_msg_type(SYMBOL_TABLE_MSG_TYPE)
+  //   if (sym_tbl_msgs.length > 0) {
+  //     return this._get_links_from_symbol_tables(sym_tbl_msgs);
+  //   }
+  //   return this._get_links_from_link_msgs()
+  // }
+
+  * iter_links() {
+    for (let msg of this.msgs) {
+      if (msg.get('type') == SYMBOL_TABLE_MSG_TYPE) {
+        yield* this._iter_links_from_symbol_tables(msg);
+      }
+      else if (msg.get('type') == LINK_MSG_TYPE) {
+        yield this._get_link_from_link_msg(msg);
+      }
+      else if (msg.get('type') == LINK_INFO_MSG_TYPE) {
+        yield* this._iter_link_from_link_info_msg(msg);
+      }
     }
-    return this._get_links_from_link_msgs()
+  }
+
+  * _iter_links_from_symbol_tables(sym_tbl_msg) {
+    //""" Return a dict of link_name: offset from a symbol table. """
+    assert(sym_tbl_msg.get('size') == 16);
+    let data = _unpack_struct_from(
+      // NOTE: using this.fh instead of this.msg_data - needs to be fixed in py file?
+      SYMBOL_TABLE_MSG, this.fh,
+      sym_tbl_msg.get('offset_to_message'));
+    yield* this._iter_links_btree_v1(data.get('btree_address'), data.get('heap_address'));
+  }
+
+  * _iter_links_btree_v1(btree_address, heap_address) {
+    //""" Retrieve links from symbol table message. """
+    let btree = new BTreeV1Groups(this.fh, btree_address);
+    let heap = new Heap(this.fh, heap_address);
+    for (let symbol_table_address of btree.symbol_table_addresses()) {
+      let table = new SymbolTable(this.fh, symbol_table_address);
+      table.assign_name(heap);
+      //let links = table.get_links(heap);
+      //let entries = links.entries();
+      yield* Object.entries(table.get_links(heap));
+    }
+  }
+
+  _get_link_from_link_msg(link_msg) {
+    //""" Retrieve link from link message. """
+    let offset = link_msg.get('offset_to_message');
+    return this._decode_link_msg(this.msg_data, offset)[1];
+  }
+
+  _decode_link_msg(data, offset) {
+    let [version, flags] = struct.unpack_from('<BB', data, offset);
+    offset += 2
+    assert(version == 1);
+
+    let size_of_length_of_link_name = 2 ** (flags & 3);
+    let link_type_field_present = (flags & 2 ** 3) > 0;
+    let link_name_character_set_field_present = (flags & 2 ** 4) > 0;
+    let ordered = (flags & 2 ** 2) > 0;
+    let link_type;
+
+    if (link_type_field_present) {
+      link_type = struct.unpack_from('<B', data, offset)[0];
+      offset += 1;
+    }
+    else {
+      link_type = 0;
+    }
+    assert([0, 1].includes(link_type));
+
+    let creationorder;
+    if (ordered) {
+      creationorder = struct.unpack_from('<Q', data, offset)[0]
+      offset += 8;
+    }
+
+    let link_name_character_set = 0;
+    if (link_name_character_set_field_present) {
+      link_name_character_set = struct.unpack_from('<B', data, offset)[0]
+      offset += 1
+    }
+
+    let encoding = (link_name_character_set == 0) ? 'ascii' : 'utf-8';
+
+    let name_size_fmt = ["<B", "<H", "<I", "<Q"][flags & 3];
+    let name_size = struct.unpack_from(name_size_fmt, data, offset)[0];
+    offset += size_of_length_of_link_name;
+
+    let name = new TextDecoder(encoding).decode(data.slice(offset, offset + name_size));
+    offset += name_size
+
+    let address;
+    //if (dereference) {
+    if (link_type == 0) {
+      //# hard link
+      address = struct.unpack_from('<Q', data, offset)[0];
+    }
+    else if (link_type == 1) {
+      //# soft link
+      let length_of_soft_link_value = struct.unpack_from('<H', data, offset)[0];
+      offset += 2
+      address = new TextDecoder(encoding).decode(data.slice(offset, offset + length_of_soft_link_value));
+    }
+
+    return [creationorder, [name, address]];
+  }
+
+  * _iter_link_from_link_info_msg(info_msg) {
+    //""" Retrieve links from link info message. """
+    let offset = info_msg.get('offset_to_message');
+    // TODO: using fh instead of msg_data
+    let data = this._decode_link_info_msg(this.fh, offset);
+
+    let heap_address = data.get("heap_address");
+    let name_btree_address = data.get("name_btree_address");
+    let order_btree_address = data.get("order_btree_address");
+    if (name_btree_address != UNDEFINED_ADDRESS) {
+      yield* this._iter_links_btree_v2(name_btree_address, order_btree_address, heap_address);
+    }
+  }
+
+  * _iter_links_btree_v2(name_btree_address, order_btree_address, heap_address) {
+    //""" Retrieve links from symbol table message. """
+    let heap = new FractalHeap(this.fh, heap_address);
+    let btree;
+    if (order_btree_address != UNDEFINED_ADDRESS) {
+      btree = new BTreeV2GroupOrders(this.fh, order_btree_address);
+    }
+    else {
+      btree = new BTreeV2GroupNames(this.fh, name_btree_address);
+    }
+    let items = new Map();
+    for (let record of btree.iter_records()) {
+      let data = heap.get_data(record.get("heapid"));
+      let [creationorder, item] = this._decode_link_msg(data, 0);
+      items.set(creationorder, item);
+    }
+    let sorted_keys = Array.from(items.keys()).sort();
+    for (let key of sorted_keys) {
+      yield items.get(key);
+    }
+  }
+
+  _decode_link_info_msg(data, offset) {
+    let [version, flags] = struct.unpack_from('<BB', data, offset);
+    assert(version == 0);
+    offset += 2;
+    if ((flags & 1) > 0) {
+      // # creation order present
+      offset += 8;
+    }
+
+    let fmt = ((flags & 2) > 0) ? LINK_INFO_MSG2 : LINK_INFO_MSG1;
+
+    let link_info = _unpack_struct_from(fmt, data, offset);
+    let output = new Map();
+    for (let [k, v] of link_info.entries()) {
+      output.set(k, v == UNDEFINED_ADDRESS ? null : v);
+    }
+    return output
   }
 
   _get_links_from_symbol_tables(sym_tbl_msgs) {
@@ -469,7 +626,7 @@ export class DataObjects {
       else {
         link_type = 0;
       }
-      assert (link_type == 0 || link_type == 1);
+      assert(link_type == 0 || link_type == 1);
       if (flags & 0b00000100) {
         //# creation order present
         offset += 8;
@@ -488,7 +645,7 @@ export class DataObjects {
       let name_size_fmt = ["<B", "<H", "<I", "<Q"][flags & 3]
       let name_size = struct.unpack_from(name_size_fmt, this.fh, offset)[0]
       offset += size_of_length_of_link_name;
-      let name = new TextDecoder(encoding).decode(this.fh.slice(offset, offset+name_size));
+      let name = new TextDecoder(encoding).decode(this.fh.slice(offset, offset + name_size));
       offset += name_size;
 
       if (link_type == 0) {
@@ -500,7 +657,7 @@ export class DataObjects {
         //# soft link
         let length_of_soft_link_value = struct.unpack_from('<H', this.fh, offset)[0];
         offset += 2;
-        links[name] = new TextDecoder('utf-8').decode(this.fh.slice(offset, offset+length_of_soft_link_value));
+        links[name] = new TextDecoder('utf-8').decode(this.fh.slice(offset, offset + length_of_soft_link_value));
       }
     }
     return links
@@ -520,21 +677,75 @@ export class DataObjects {
     var [version, dims, layout_class, property_offset] = (
       this._get_data_message_properties(msg_offset));
 
-    if (layout_class == 2) { //  # chunked storage
+    if (layout_class == 0) { // compact storage
+      throw "Compact storage of DataObject not implemented"
+    }
+    else if (layout_class == 1) {
+      return this._get_contiguous_data(property_offset)
+    }
+    else if (layout_class == 2) { //  # chunked storage
       return this._get_chunked_data(msg_offset);
     }
+  }
 
-    assert(layout_class == 1);
-    //var [data_offset, data_offset_higher] = struct.unpack_from('<II', this.fh, property_offset);
-    var [data_offset] = struct.unpack_from('<Q', this.fh, property_offset);
-    let full_address = struct.unpack_from('<II', this.fh, property_offset);
+  // _get_data_message_properties(msg_offset) {
+  //   //""" Return the message properties of the DataObject. """
+  //   var [dims, layout_class, property_offset] = [null, null, null];
+  //   var [version, arg1, arg2] = struct.unpack_from('<BBB', this.fh, msg_offset);
+  //   if ((version == 1) || (version == 2)) {
+  //     dims = arg1;
+  //     layout_class = arg2;
+  //     // 4 bytes for version, dims, layout class and reserved
+  //     // then another 4 bytes reserved...
+  //     property_offset = msg_offset + 8;
+  //     assert((layout_class == 1) || (layout_class == 2));
+  //   }
+  //   else if ((version == 3) || (version == 4)) {
+  //     layout_class = arg1;
+  //     property_offset = msg_offset;
+  //     property_offset += struct.calcsize('<BB');
+  //   }
+  //   assert((version >= 1) && (version <= 4));
+  //   return [version, dims, layout_class, property_offset];
+  // }
 
-    if (full_address[0] == UNDEFINED_ADDRESS[0] && full_address[1] == UNDEFINED_ADDRESS[1]) {
+  _get_data_message_properties(msg_offset) {
+    // """ Return the message properties of the DataObject. """
+    console.log('getting data message properties!');
+    let dims, layout_class, property_offset;
+    let [version, arg1, arg2] = struct.unpack_from(
+      '<BBB', this.fh, msg_offset);
+      // TODO: using fh here instead of msg_data
+      //'<BBB', this.msg_data, msg_offset);
+
+    if ((version == 1) || (version == 2)) {
+      dims = arg1;
+      layout_class = arg2;
+      property_offset = msg_offset;
+      property_offset += struct.calcsize('<BBB');
+      //# reserved fields: 1 byte, 1 int
+      property_offset += struct.calcsize('<BI')
+      //# compact storage (layout class 0) not supported:
+      assert((layout_class == 1) || (layout_class == 2))
+    }
+    else if ((version == 3) || (version == 4)) {
+      layout_class = arg1;
+      property_offset = msg_offset;
+      property_offset += struct.calcsize('<BB');
+    }
+    assert((version >= 1) && (version <= 4));
+    return [version, dims, layout_class, property_offset];
+  }
+
+  _get_contiguous_data(property_offset) {
+    let [data_offset] = struct.unpack_from('<Q', this.fh, property_offset);
+
+    if (data_offset == UNDEFINED_ADDRESS) {
       //# no storage is backing array, return empty array
-      let size = this.shape.reduce(function(a,b) { return a * b }, 1); // int(np.product(shape))
+      let size = this.shape.reduce(function (a, b) { return a * b }, 1); // int(np.product(shape))
       return new Array(size);
     }
-    var fullsize = this.shape.reduce(function(a,b) { return a * b }, 1);
+    var fullsize = this.shape.reduce(function (a, b) { return a * b }, 1);
     if (!(this.dtype instanceof Array)) {
       //# return a memory-map to the stored array with copy-on-write
       //return np.memmap(self.fh, dtype=self.dtype, mode='c',
@@ -544,8 +755,8 @@ export class DataObjects {
         let [item_getter, item_is_big_endian, item_size] = dtype_getter(dtype);
         let output = new Array(fullsize);
         let view = new DataView64(this.fh);
-        for (var i=0; i<fullsize; i++) {
-          output[i] = view[item_getter](data_offset + i*item_size, !item_is_big_endian, item_size);
+        for (var i = 0; i < fullsize; i++) {
+          output[i] = view[item_getter](data_offset + i * item_size, !item_is_big_endian, item_size);
         }
         return output
       }
@@ -558,7 +769,7 @@ export class DataObjects {
       if (dtype_class == 'REFERENCE') {
         let size = this.dtype[1];
         if (size != 8) {
-            throw "NotImplementedError('Unsupported Reference type')";
+          throw "NotImplementedError('Unsupported Reference type')";
         }
         let ref_addresses = this.fh.slice(data_offset, data_offset + fullsize);
 
@@ -571,7 +782,7 @@ export class DataObjects {
       else if (dtype_class == 'VLEN_STRING') {
         let character_set = this.dtype[2];
         var value = [];
-        for (var i=0; i<fullsize; i++) {
+        for (var i = 0; i < fullsize; i++) {
           var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
           let fmt = '<' + vlen.toFixed() + 's';
           let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
@@ -595,14 +806,14 @@ export class DataObjects {
   _get_chunked_data(offset) {
     //""" Return data which is chunked. """
     this._get_chunk_params();
-    var chunk_btree = new BTreeRawDataChunks(
+    var chunk_btree = new BTreeV1RawDataChunks(
       this.fh, this._chunk_address, this._chunk_dims);
     let data = chunk_btree.construct_data_from_chunks(
       this.chunks, this.shape, this.dtype, this.filter_pipeline);
     if (this.dtype instanceof Array && /^VLEN/.test(this.dtype[0])) {
       // VLEN data
       let dtype_class = this.dtype[0];
-      for (var i=0; i<data.length; i++) {
+      for (var i = 0; i < data.length; i++) {
         let [item_size, gheap_address, object_index] = data[i];
         var gheap;
         if (!(gheap_address in this._global_heaps)) {
@@ -638,14 +849,14 @@ export class DataObjects {
     attributes. Calling this method multiple times is fine, it will not
     re-read the parameters.
     */
-    if (this._chunk_params_set)  { //# parameter have already need retrieved
+    if (this._chunk_params_set) { //# parameter have already need retrieved
       return
     }
     this._chunk_params_set = true;
     var msg = this.find_msg_type(DATA_STORAGE_MSG_TYPE)[0];
     var offset = msg.get('offset_to_message');
     var [version, dims, layout_class, property_offset] = (
-        this._get_data_message_properties(offset));
+      this._get_data_message_properties(offset));
 
     if (layout_class != 2) { //# not chunked storage
       return
@@ -658,38 +869,17 @@ export class DataObjects {
     }
     else if (version == 3) {
       var [dims, address] = struct.unpack_from(
-            '<BQ', this.fh, property_offset);
+        '<BQ', this.fh, property_offset);
       data_offset = property_offset + struct.calcsize('<BQ');
     }
     assert((version >= 1) && (version <= 3));
 
-    var fmt = '<' + (dims-1).toFixed() + 'I';
+    var fmt = '<' + (dims - 1).toFixed() + 'I';
     var chunk_shape = struct.unpack_from(fmt, this.fh, data_offset);
     this._chunks = chunk_shape;
     this._chunk_dims = dims;
     this._chunk_address = address;
     return
-  }
-
-  _get_data_message_properties(msg_offset) {
-    //""" Return the message properties of the DataObject. """
-    var [dims, layout_class, property_offset] = [null, null, null];
-    var [version, arg1, arg2] = struct.unpack_from('<BBB', this.fh, msg_offset);
-    if ((version == 1) || (version == 2)) {
-      dims = arg1;
-      layout_class = arg2;
-      // 4 bytes for version, dims, layout class and reserved
-      // then another 4 bytes reserved...
-      property_offset = msg_offset + 8; 
-      assert( (layout_class == 1) || (layout_class == 2));
-    }
-    else if ((version == 3) || (version == 4)) {
-      layout_class = arg1;
-      property_offset = msg_offset;
-      property_offset += struct.calcsize('<BB');
-    }
-    assert((version >= 1) && (version <= 4));
-    return [version, dims, layout_class, property_offset];
   }
 
 }
@@ -716,10 +906,10 @@ function determine_data_shape(buf, offset) {
   let dim_sizes = struct.unpack_from('<' + (ndims * 2).toFixed() + 'I', buf, offset);
   //# Dimension maximum size follows if header['flags'] bit 0 set
   //# Permutation index follows if header['flags'] bit 1 set
-  return dim_sizes.filter(function(s, i) { return i%2 == 0 });
+  return dim_sizes.filter(function (s, i) { return i % 2 == 0 });
 }
 
-var UNDEFINED_ADDRESS = struct.unpack_from('<II', new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255]).buffer);
+var UNDEFINED_ADDRESS = struct.unpack_from('<Q', new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255]).buffer);
 
 var GLOBAL_HEAP_ID = new Map([
   ['collection_address', 'Q'],  //# 8 byte addressing,
@@ -729,21 +919,21 @@ var GLOBAL_HEAP_ID_SIZE = _structure_size(GLOBAL_HEAP_ID);
 
 //# IV.A.2.m The Attribute Message
 var ATTR_MSG_HEADER_V1 = new Map([
-    ['version', 'B'],
-    ['reserved', 'B'],
-    ['name_size', 'H'],
-    ['datatype_size', 'H'],
-    ['dataspace_size', 'H'],
+  ['version', 'B'],
+  ['reserved', 'B'],
+  ['name_size', 'H'],
+  ['datatype_size', 'H'],
+  ['dataspace_size', 'H'],
 ]);
 var ATTR_MSG_HEADER_V1_SIZE = _structure_size(ATTR_MSG_HEADER_V1);
 
 var ATTR_MSG_HEADER_V3 = new Map([
-    ['version', 'B'],
-    ['flags', 'B'],
-    ['name_size', 'H'],
-    ['datatype_size', 'H'],
-    ['dataspace_size', 'H'],
-    ['character_set_encoding', 'B'],
+  ['version', 'B'],
+  ['flags', 'B'],
+  ['name_size', 'H'],
+  ['datatype_size', 'H'],
+  ['dataspace_size', 'H'],
+  ['character_set_encoding', 'B'],
 ]);
 var ATTR_MSG_HEADER_V3_SIZE = _structure_size(ATTR_MSG_HEADER_V3);
 
@@ -809,18 +999,29 @@ var SYMBOL_TABLE_MSG = new Map([
   ['heap_address', 'Q'],      //# 8 byte addressing
 ]);
 
+const LINK_INFO_MSG1 = new Map([
+  ['heap_address', 'Q'],        // 8 byte addressing
+  ['name_btree_address', 'Q']   // 8 bytes addressing
+])
+
+const LINK_INFO_MSG2 = new Map([
+  ['heap_address', 'Q'],         // 8 byte addressing
+  ['name_btree_address', 'Q'],   // 8 bytes addressing
+  ['order_btree_address', 'Q']   // 8 bytes addressing
+])
+
 // IV.A.2.f. The Data Storage - Fill Value Message
 var FILLVAL_MSG_V1V2 = new Map([
-    ['version', 'B'],
-    ['space_allocation_time', 'B'],
-    ['fillvalue_write_time', 'B'],
-    ['fillvalue_defined', 'B']
+  ['version', 'B'],
+  ['space_allocation_time', 'B'],
+  ['fillvalue_write_time', 'B'],
+  ['fillvalue_defined', 'B']
 ]);
 var FILLVAL_MSG_V1V2_SIZE = _structure_size(FILLVAL_MSG_V1V2);
 
 var FILLVAL_MSG_V3 = new Map([
-    ['version', 'B'],
-    ['flags', 'B']
+  ['version', 'B'],
+  ['flags', 'B']
 ]);
 var FILLVAL_MSG_V3_SIZE = _structure_size(FILLVAL_MSG_V3);
 

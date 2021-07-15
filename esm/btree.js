@@ -1,4 +1,4 @@
-import {_unpack_struct_from, _structure_size, struct, dtype_getter, DataView64} from './core.js';
+import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
 import {default as pako} from '../web_modules/pako-es.js';
 
 const zlib = {
@@ -9,14 +9,17 @@ const zlib = {
 };
 
 class AbstractBTree {
-  B_LINK_NODE = null;
-  NODE_TYPE = null;
+  //B_LINK_NODE = null;
+  //NODE_TYPE = null;
 
   constructor(fh, offset) {
     //""" initalize. """
     this.fh = fh;
     this.offset = offset;
     this.depth = null;
+  }
+
+  init() {
     this.all_nodes = new Map();
     this._read_root_node();
     this._read_children();
@@ -29,7 +32,7 @@ class AbstractBTree {
     while (node_level > 0) {
       for (var parent_node of all_nodes.get(node_level)) {
         for (var child_addr of parent_node.get('addresses')) {
-          this._add_node(this._read_node(child_addr, node_level-1)
+          this._add_node(this._read_node(child_addr, node_level-1));
         }
       }
     }
@@ -63,7 +66,7 @@ class AbstractBTree {
     //""" Return a single node header in the b-tree located at a give offset. """
     throw "NotImplementedError: must define _read_node_header in implementation class";
   }
-
+}
 
 export class BTreeV1 extends AbstractBTree {
   /*
@@ -79,7 +82,7 @@ export class BTreeV1 extends AbstractBTree {
     ['node_level', 'B'],
     ['entries_used', 'H'],
 
-    ['left_sibling', 'Q'],     // 8 byte addressing
+    ['left_sibling', 'Q'],    // 8 byte addressing
     ['right_sibling', 'Q']    // 8 byte addressing
   ])
   
@@ -107,9 +110,15 @@ export class BTreeV1Groups extends BTreeV1 {
   */
   NODE_TYPE = 0;
 
+  constructor(fh, offset) {
+    super(fh, offset);
+    this.init();
+  }
+
   _read_node(offset, node_level) {
     // """ Return a single node in the B-Tree located at a given offset. """
     let node = this._read_node_header(offset, node_level);
+    offset += _structure_size(this.B_LINK_NODE);
     let keys = [];
     let addresses = [];
     let entries_used = node.get('entries_used');
@@ -139,7 +148,7 @@ export class BTreeV1Groups extends BTreeV1 {
   }
 }
 
-export class BTreeRawDataChunks extends BTreeV1 {
+export class BTreeV1RawDataChunks extends BTreeV1 {
   /*
   HDF5 version 1 B-Tree storing raw data chunk nodes (type 1).
   */
@@ -147,8 +156,9 @@ export class BTreeRawDataChunks extends BTreeV1 {
   
   constructor(fh, offset, dims) {
     //""" initalize. """
-    this.dims = dims;
     super(fh, offset);
+    this.dims = dims;
+    this.init();
   }
 
   _read_node(offset, node_level) {
@@ -351,7 +361,7 @@ export class BTreeV2 extends AbstractBTree {
     ['root_address', 'Q'],     // 8 byte addressing
     ['root_nrecords', 'H'],
     ['total_nrecords', 'Q'],   // 8 byte addressing
-  ))
+  ]);
 
   B_LINK_NODE = new Map([
       ['signature', '4s'],
@@ -359,6 +369,11 @@ export class BTreeV2 extends AbstractBTree {
       ['version', 'B'],
       ['node_type', 'B'],
   ])
+
+  constructor(fh, offset) {
+    super(fh, offset);
+    this.init();
+  }
 
   _read_root_node() {
     let h = this._read_tree_header(this.offset);
@@ -372,13 +387,13 @@ export class BTreeV2 extends AbstractBTree {
   }
   
   _read_tree_header(offset) {
-    let header = struct.unpack_from(this.B_TREE_HEADER, this.fh, this.offset);
+    let header = _unpack_struct_from(this.B_TREE_HEADER, this.fh, this.offset);
     //assert header['signature'] == b'BTHD'
-    //assert header['node_type'] == self.NODE_TYPE
+    //assert header['node_type'] == this.NODE_TYPE
     return header;
   }
   
-  _calculate_address_formats(self, header) {
+  _calculate_address_formats(header) {
     let node_size = header.get("node_size");
     let record_size = header.get("record_size");
     let nrecords_max = 0;
@@ -455,11 +470,11 @@ export class BTreeV2 extends AbstractBTree {
   _read_node(address, node_level) {
     // """ Return a single node in the B-Tree located at a given offset. """
     let [offset, nrecords, ntotalrecords] = address;
-    let node = self._read_node_header(offset, node_level);
+    let node = this._read_node_header(offset, node_level);
     offset += _structure_size(this.B_LINK_NODE);
-    let record_size = self.header.get('record_size');
+    let record_size = this.header.get('record_size');
     let keys = [];
-    for (let i=0; i<nrecords, i++) {
+    for (let i=0; i<nrecords; i++) {
       let record = this._parse_record(this.fh, offset, record_size);
       offset += record_size;
       keys.push(record);
@@ -470,13 +485,13 @@ export class BTreeV2 extends AbstractBTree {
     if (node_level != 0) {
       let [offset_size, num1_size, num2_size, offset_fmt, num1_fmt, num2_fmt] = fmts;
       for (let j=0; j<=nrecords; j++) {
-        let address_offset = struct.unpack_from(offset_fmt, self.fh, offset)[0];
+        let address_offset = struct.unpack_from(offset_fmt, this.fh, offset)[0];
         offset += offset_size;
-        let num1 = struct.unpack_from(num1_fmt, self.fh, offset)[0];
+        let num1 = struct.unpack_from(num1_fmt, this.fh, offset)[0];
         offset += num1_size;
         let num2 = num1;
         if (num2_size > 0) {
-          num2 = struct.unpack_from(num2_fmt, self.fh, offset)[0];
+          num2 = struct.unpack_from(num2_fmt, this.fh, offset)[0];
         }
         addresses.push([address_offset, num1, num2]);
       }
@@ -489,8 +504,8 @@ export class BTreeV2 extends AbstractBTree {
   
   _read_node_header(offset, node_level) {
     // """ Return a single node header in the b-tree located at a give offset. """
-    let node = struct.unpack_from(this.B_LINK_NODE, this.fh, offset);
-    //assert node['node_type'] == self.NODE_TYPE
+    let node = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
+    //assert node['node_type'] == this.NODE_TYPE
     if (node_level > 0) {
       // Internal node (has children)
       // assert node['signature'] == b'BTIN'
@@ -526,9 +541,10 @@ export class BTreeV2GroupNames extends BTreeV2 {
   */
   NODE_TYPE = 5
 
-  _parse_record(record) {
-    let namehash = struct.unpack_from("<I", record, 0)[0];
-    return {'namehash': namehash, 'heapid': record.slice(4, 4+7)}
+  _parse_record(buf, offset, size) {
+    let namehash = struct.unpack_from("<I", buf, offset)[0];
+    offset += 4;
+    return new Map([['namehash', namehash], ['heapid', buf.slice(offset, offset+7)]]);
   }
 }
 
@@ -539,9 +555,10 @@ export class BTreeV2GroupOrders extends BTreeV2 {
   */    
   NODE_TYPE = 6
 
-  _parse_record(record) {
-    let creationorder = struct.unpack_from("<Q", record, 0)[0]
-    return {'creationorder': creationorder, 'heapid': record.slice(8, 8+7)}
+  _parse_record(buf, offset, size) {
+    let creationorder = struct.unpack_from("<Q", buf, offset)[0];
+    offset += 8;
+    return new Map([['creationorder', creationorder], ['heapid', buf.slice(offset, offset+7)]]);
   }
 }
 
@@ -579,9 +596,7 @@ function _verify_fletcher32(chunk_buffer) {
   return true
 }
 
-function bitSize(num) {
-  return num.toString(2).length;
-}
+
 
 //# IV.A.2.l The Data Storage - Filter Pipeline message
 var RESERVED_FILTER = 0;
