@@ -72,35 +72,70 @@ export class DataObjects {
     var offset = filter_msgs[0].get('offset_to_message');
     let [version, nfilters] = struct.unpack_from('<BB', this.fh, offset);
     offset += struct.calcsize('<BB');
-    if (version != 1) {
-      throw 'NotImplementedError("only version 1 filters supported. ")';
-    }
-    let [res0, res1] = struct.unpack_from('<HI', this.fh, offset);
-    offset += struct.calcsize('<HI');
+    // if (version != 1) {
+    //   throw 'NotImplementedError("only version 1 filters supported. ")';
+    // }
+    var filters = [];
+    if (version == 1) {
+      let [res0, res1] = struct.unpack_from('<HI', this.fh, offset);
+      offset += struct.calcsize('<HI');
 
-    var filters = []
-    for (var _ = 0; _ < nfilters; _++) {
+      for (var _ = 0; _ < nfilters; _++) {
 
-      let filter_info = _unpack_struct_from(
-        FILTER_PIPELINE_DESCR_V1, this.fh, offset);
-      offset += FILTER_PIPELINE_DESCR_V1_SIZE;
+        let filter_info = _unpack_struct_from(
+          FILTER_PIPELINE_DESCR_V1, this.fh, offset);
+        offset += FILTER_PIPELINE_DESCR_V1_SIZE;
 
-      let padded_name_length = _padded_size(filter_info.get('name_length'), 8);
-      let fmt = '<' + padded_name_length.toFixed() + 's';
-      let filter_name = struct.unpack_from(fmt, this.fh, offset)[0];
-      filter_info.set('filter_name', filter_name);
-      offset += padded_name_length;
+        let padded_name_length = _padded_size(filter_info.get('name_length'), 8);
+        let fmt = '<' + padded_name_length.toFixed() + 's';
+        let filter_name = struct.unpack_from(fmt, this.fh, offset)[0];
+        filter_info.set('filter_name', filter_name);
+        offset += padded_name_length;
 
-      fmt = '<' + filter_info.get('client_data_values').toFixed() + 'I';
-      let client_data = struct.unpack_from(fmt, this.fh, offset);
-      filter_info.set('client_data', client_data);
-      offset += 4 * filter_info.get('client_data_values');
+        fmt = '<' + filter_info.get('client_data_values').toFixed() + 'I';
+        let client_data = struct.unpack_from(fmt, this.fh, offset);
+        filter_info.set('client_data', client_data);
+        offset += 4 * filter_info.get('client_data_values');
 
-      if (filter_info.get('client_data_values') % 2) {
-        offset += 4;  //# odd number of client data values padded
+        if (filter_info.get('client_data_values') % 2) {
+          offset += 4;  //# odd number of client data values padded
+        }
+
+        filters.push(filter_info);
       }
-
-      filters.push(filter_info);
+    }
+    else if (version == 2) {
+      for (let nf= 0; nf < nfilters; nf++) { 
+        let filter_info = new Map();
+        let buf = this.fh;
+        let filter_id = struct.unpack_from('<H', buf, offset)[0];
+        offset += 2;
+        filter_info.set('filter_id', filter_id);
+        let name_length = 0;
+        if (filter_id > 255) {
+          name_length = struct.unpack_from('<H', buf, offset)[0];
+          offset += 2;
+        }
+        let flags = struct.unpack_from('<H', buf, offset)[0];
+        offset += 2;
+        let optional = (flags & 1) > 0;
+        filter_info.set('optional', optional);
+        let num_client_values = struct.unpack_from('<H', buf, offset)[0];
+        offset += 2;
+        let name;
+        if (name_length > 0) {
+          name = struct.unpack_from(`${name_length}s`, buf, offset)[0];
+          offset += name_length;
+        }
+        filter_info.set('name', name);
+        let client_values = struct.unpack_from(`<${num_client_values}i`, buf, offset);
+        offset += (4 * num_client_values);
+        filter_info.set('client_data_values', client_values);
+        filters.push(filter_info);
+      }
+    }
+    else {
+      throw `version ${version} is not supported`
     }
     this._filter_pipeline = filters;
     return this._filter_pipeline;
@@ -688,30 +723,8 @@ export class DataObjects {
     }
   }
 
-  // _get_data_message_properties(msg_offset) {
-  //   //""" Return the message properties of the DataObject. """
-  //   var [dims, layout_class, property_offset] = [null, null, null];
-  //   var [version, arg1, arg2] = struct.unpack_from('<BBB', this.fh, msg_offset);
-  //   if ((version == 1) || (version == 2)) {
-  //     dims = arg1;
-  //     layout_class = arg2;
-  //     // 4 bytes for version, dims, layout class and reserved
-  //     // then another 4 bytes reserved...
-  //     property_offset = msg_offset + 8;
-  //     assert((layout_class == 1) || (layout_class == 2));
-  //   }
-  //   else if ((version == 3) || (version == 4)) {
-  //     layout_class = arg1;
-  //     property_offset = msg_offset;
-  //     property_offset += struct.calcsize('<BB');
-  //   }
-  //   assert((version >= 1) && (version <= 4));
-  //   return [version, dims, layout_class, property_offset];
-  // }
-
   _get_data_message_properties(msg_offset) {
     // """ Return the message properties of the DataObject. """
-    console.log('getting data message properties!');
     let dims, layout_class, property_offset;
     let [version, arg1, arg2] = struct.unpack_from(
       '<BBB', this.fh, msg_offset);
