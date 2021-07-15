@@ -244,7 +244,7 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
     }).reverse();
     var data = new Array(data_size);
     let chunk_buffer_size = chunk_size * item_size;
-    for (var node of this.all_nodes[0]) {
+    for (var node of this.all_nodes.get(0)) {
       //console.log(node);
       let node_keys = node.get('keys');
       let node_addresses = node.get('addresses');
