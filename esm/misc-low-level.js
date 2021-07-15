@@ -182,7 +182,6 @@ export class FractalHeap {
 
   constructor(fh, offset) {
     this.fh = fh;
-    this.offset = offset;
     let header = _unpack_struct_from(FRACTAL_HEAP_HEADER, fh, offset);
     offset += _structure_size(FRACTAL_HEAP_HEADER);
     assert(header.get('signature') == 'FRHP');

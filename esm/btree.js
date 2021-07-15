@@ -30,11 +30,12 @@ class AbstractBTree {
     // # Root node: level "depth"
     let node_level = this.depth;
     while (node_level > 0) {
-      for (var parent_node of all_nodes.get(node_level)) {
+      for (var parent_node of this.all_nodes.get(node_level)) {
         for (var child_addr of parent_node.get('addresses')) {
           this._add_node(this._read_node(child_addr, node_level-1));
         }
       }
+      node_level--;
     }
   }
   

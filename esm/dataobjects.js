@@ -72,9 +72,7 @@ export class DataObjects {
     var offset = filter_msgs[0].get('offset_to_message');
     let [version, nfilters] = struct.unpack_from('<BB', this.fh, offset);
     offset += struct.calcsize('<BB');
-    // if (version != 1) {
-    //   throw 'NotImplementedError("only version 1 filters supported. ")';
-    // }
+    
     var filters = [];
     if (version == 1) {
       let [res0, res1] = struct.unpack_from('<HI', this.fh, offset);
