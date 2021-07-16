@@ -564,7 +564,6 @@ export class DataObjects {
   * _iter_link_from_link_info_msg(info_msg) {
     //""" Retrieve links from link info message. """
     let offset = info_msg.get('offset_to_message');
-    // TODO: using fh instead of msg_data
     let data = this._decode_link_info_msg(this.fh, offset);
 
     let heap_address = data.get("heap_address");
@@ -726,8 +725,6 @@ export class DataObjects {
     let dims, layout_class, property_offset;
     let [version, arg1, arg2] = struct.unpack_from(
       '<BBB', this.fh, msg_offset);
-      // TODO: using fh here instead of msg_data
-      //'<BBB', this.msg_data, msg_offset);
 
     if ((version == 1) || (version == 2)) {
       dims = arg1;
