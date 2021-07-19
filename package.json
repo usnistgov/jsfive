@@ -2,7 +2,6 @@
   "name": "jsfive",
   "version": "0.2.3",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
-  "main": "index.js",
   "module": "index.js",
   "browser": "dist/hdf5.js",
   "scripts": {
@@ -31,6 +30,8 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
+    "@babel/plugin-proposal-class-properties": "^7.14.5",
+    "@babel/plugin-proposal-private-methods": "^7.14.5",
     "pako-es": "^1.0.9"
   },
   "devDependencies": {

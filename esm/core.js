@@ -1,16 +1,16 @@
-export function _unpack_struct_from(structure, buf, offset=0) {
-  var fmt = '<' + Array.from(structure.values()).join('');
-  var values = struct.unpack_from(fmt, buf, offset);
-  var keys = Array.from(structure.keys());
+export function _unpack_struct_from(structure, buf, offset = 0) {
   var output = new Map();
-  for (var i=0; i<keys.length; i++) {
-      output.set(keys[i], values[i]);
+  for (let [key, fmt] of structure.entries()) {
+    let value = struct.unpack_from('<' + fmt, buf, offset);
+    offset += struct.calcsize(fmt);
+    if (value.length == 1) { value = value[0] };
+    output.set(key, value);
   }
   return output
 }
 
 export function assert(thing) {
-  if (!thing) {thing()}
+  if (!thing) { thing() }
 }
 
 export function _structure_size(structure) {
@@ -19,7 +19,7 @@ export function _structure_size(structure) {
   return struct.calcsize(fmt);
 }
 
-export function _padded_size(size, padding_multiple=8) {
+export function _padded_size(size, padding_multiple = 8) {
   //""" Return the size of a field padded to be a multiple a given value. """
   return (Math.ceil(size / padding_multiple) * padding_multiple);
 }
@@ -55,9 +55,9 @@ export class Reference {
   """
   */
   constructor(address_of_reference) {
-      this.address_of_reference = address_of_reference;
+    this.address_of_reference = address_of_reference;
   }
-  
+
   __bool__() {
     return (this.address_of_reference != 0);
   }
@@ -109,7 +109,7 @@ class Struct {
       let subsize = this.byte_lengths[f];
       size += n * subsize;
     }
-    return size; 
+    return size;
   }
   _is_big_endian(fmt) {
     var big_endian;
@@ -125,7 +125,7 @@ class Struct {
     return big_endian;
   }
   unpack_from(fmt, buffer, offset) {
-    var offset = offset || 0;
+    var offset = Number(offset || 0);
     var view = new DataView64(buffer, 0);
     var output = [];
     var big_endian = this._is_big_endian(fmt);
@@ -144,12 +144,12 @@ class Struct {
       else {
         append_target = output;
       }
-      for (var i=0; i<n; i++) {
+      for (var i = 0; i < n; i++) {
         append_target.push(view[getter](offset, !big_endian));
         offset += size;
       }
       if (f == 's') {
-        output.push(sarray.reduce(function(a,b) { return a + String.fromCharCode(b) }, ''));
+        output.push(sarray.reduce(function (a, b) { return a + String.fromCharCode(b) }, ''));
       }
     }
     return output
@@ -165,46 +165,52 @@ function isBigEndian() {
 }
 
 var WARN_OVERFLOW = false;
+var MAX_INT64 = 1n << 63n - 1n;
+var MIN_INT64 = -1n << 63n;
+var MAX_UINT64 = 1n << 64n;
+var MIN_UINT64 = 0n;
 
 export class DataView64 extends DataView {
   getUint64(byteOffset, littleEndian) {
     // split 64-bit number into two 32-bit (4-byte) parts
-    const left =  this.getUint32(byteOffset, littleEndian);
-    const right = this.getUint32(byteOffset+4, littleEndian);
-  
+    const left = BigInt(this.getUint32(byteOffset, littleEndian));
+    const right = BigInt(this.getUint32(byteOffset + 4, littleEndian));
+
     // combine the two 32-bit values
-    const combined = littleEndian? left + 2**32*right : 2**32*left + right;
-  
-    if (WARN_OVERFLOW && !Number.isSafeInteger(combined))
-      console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost');
-  
-    return combined;
-  } 
-  
+    let combined = littleEndian ? left + (right << 32n) : (left << 32n) + right;
+
+    if (WARN_OVERFLOW && (combined < MIN_UINT64 || combined > MAX_UINT64)) {
+      console.warn(combined, 'exceeds range of 64-bit unsigned int');
+    }
+
+    return Number(combined);
+  }
+
   getInt64(byteOffset, littleEndian) {
     // split 64-bit number into two 32-bit (4-byte) parts
     // untested!!
     var low, high;
     if (littleEndian) {
-      low =  this.getUint32(byteOffset, true);
-      high = this.getInt32(byteOffset+4, true);
+      low = this.getUint32(byteOffset, true);
+      high = this.getInt32(byteOffset + 4, true);
     }
     else {
       high = this.getInt32(byteOffset, false);
-      low = this.getUint32(byteOffset+4, false);
+      low = this.getUint32(byteOffset + 4, false);
     }
-    
-    const combined = low + high * 4294967296;
 
-    if (WARN_OVERFLOW && !Number.isSafeInteger(combined))
-      console.warn(combined, 'exceeds MAX_SAFE_INTEGER or MIN_SAFE_INTEGER. Precision may be lost');
-    
-    return combined;
+    let combined = BigInt(low) + (BigInt(high) << 32n);
+
+    if (WARN_OVERFLOW && (combined < MIN_INT64 || combined > MAX_INT64)) {
+      console.warn(combined, 'exceeds range of 64-bit signed int');
+    }
+
+    return Number(combined);
   }
 
   getString(byteOffset, littleEndian, length) {
     var output = "";
-    for (var i=0; i<length; i++) {
+    for (var i = 0; i < length; i++) {
       let c = this.getUint8(byteOffset + i);
       if (c) {
         // filter out zero character codes (padding)
@@ -214,7 +220,7 @@ export class DataView64 extends DataView {
     return decodeURIComponent(escape(output));
   }
 
-  getVLENStruct(byteOffset, littleEndian, length){
+  getVLENStruct(byteOffset, littleEndian, length) {
     // get the addressing information for VLEN data
     let item_size = this.getUint32(byteOffset, littleEndian);
     let collection_address = this.getUint64(byteOffset + 4, littleEndian);
@@ -222,31 +228,40 @@ export class DataView64 extends DataView {
     return [item_size, collection_address, object_index];
   }
 
-  generate_getFixedString(length) {
-    var getter = function(byteoffset, littleEndian) {
-      var output = "";
-      for (var i=0; i<length; i++) {
-        output += String.fromCharCode(this.getUint8(offset));
-      }
-      return output;
-    }
-    return getter.bind(this);
-  }
+}
 
+export function bitSize(integer) {
+  return integer.toString(2).length;
+}
+
+export function _unpack_integer(nbytes, fh, offset = 0, littleEndian = true) {
+  //let padded_bytelength = 1 << Math.ceil(Math.log2(nbytes));
+  //let format = _int_format(padded_bytelength);
+  //let buf = new ArrayBuffer(padded_bytelength); // all zeros to start
+  let bytes = new Uint8Array(fh.slice(offset, offset+nbytes));
+  if (!littleEndian) {
+    bytes.reverse();
+  }
+  let integer = bytes.reduce((accumulator, currentValue, index) => accumulator + (currentValue << (index * 8)), 0);
+  return integer;
+  
+  //new Uint8Array(buf).set(new Uint8Array(fh.slice(offset, offset + nbytes)));
+  //return struct.unpack_from(format, buf, 0)[0];
+}
+
+function _int_format(bytelength) {
+  assert([1,2,4,8].includes(bytelength));
+  let index = Math.log2(bytelength);
+  return ["<B", "<H", "<I", "<Q"][index];
 }
 
 function getUint64(dataview, byteOffset, littleEndian) {
   // split 64-bit number into two 32-bit (4-byte) parts
-  const left =  dataview.getUint32(byteOffset, littleEndian);
-  const right = dataview.getUint32(byteOffset+4, littleEndian);
+  const left = BigInt(this.getUint32(byteOffset, littleEndian));
+  const right = BigInt(this.getUint32(byteOffset + 4, littleEndian));
 
   // combine the two 32-bit values
-  const combined = littleEndian? left + 2**32*right : 2**32*left + right;
-
-  if (!Number.isSafeInteger(combined))
-    console.warn(combined, 'exceeds MAX_SAFE_INTEGER. Precision may be lost');
-
-  return combined;
+  return littleEndian ? left + right << 32n : left << 32n + right;
 }
 
 var VLEN_ADDRESS = new Map([
