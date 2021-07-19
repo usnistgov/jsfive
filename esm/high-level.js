@@ -17,6 +17,34 @@ export class Group {
     parent : Group
         Group instance containing this group.
   */
+
+  /**
+   *
+   *
+   * @memberof Group
+   * @member {Group|File} parent;
+   * @member {File} file;
+   * @member {string} name;
+   * @member {DataObjects} _dataobjects;
+   * @member {Object} _attrs;
+   * @member {Array<string>} _keys;
+   */
+  parent;
+  file;
+  name;
+  _links;
+  _dataobjects;
+  _attrs;
+  _keys;
+
+  /**
+   * 
+   * @param {string} name 
+   * @param {DataObjects} dataobjects 
+   * @param {Group} [parent] 
+   * @param {boolean} [getterProxy=false]
+   * @returns {Group}
+   */
   constructor(name, dataobjects, parent, getterProxy=false) {
     if (parent == null) {
       this.parent = this;
@@ -273,6 +301,24 @@ export class Dataset extends Array {
   parent : Group
       Group instance containing this dataset.
   */
+
+  /**
+   *
+   *
+   * @memberof Dataset
+   * @member {Group|File} parent;
+   * @member {File} file;
+   * @member {string} name;
+   * @member {DataObjects} _dataobjects;
+   * @member {Object} _attrs;
+   * @member {string} _astype;
+   */
+  parent;
+  file;
+  name;
+  _dataobjects;
+  _attrs;
+  _astype;
 
   constructor(name, dataobjects, parent) {
     //""" initalize. """

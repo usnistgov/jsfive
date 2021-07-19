@@ -228,17 +228,6 @@ export class DataView64 extends DataView {
     return [item_size, collection_address, object_index];
   }
 
-  generate_getFixedString(length) {
-    var getter = function (byteoffset, littleEndian) {
-      var output = "";
-      for (var i = 0; i < length; i++) {
-        output += String.fromCharCode(this.getUint8(offset));
-      }
-      return output;
-    }
-    return getter.bind(this);
-  }
-
 }
 
 export function bitSize(integer) {

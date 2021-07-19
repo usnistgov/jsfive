@@ -454,12 +454,6 @@ export class DataObjects {
     //""" Return a dictionary of link_name: offset """
     return Object.fromEntries(this.iter_links());
   }
-  //   let sym_tbl_msgs = this.find_msg_type(SYMBOL_TABLE_MSG_TYPE)
-  //   if (sym_tbl_msgs.length > 0) {
-  //     return this._get_links_from_symbol_tables(sym_tbl_msgs);
-  //   }
-  //   return this._get_links_from_link_msgs()
-  // }
 
   * iter_links() {
     for (let msg of this.msgs) {
@@ -615,95 +609,19 @@ export class DataObjects {
     return output
   }
 
-  _get_links_from_symbol_tables(sym_tbl_msgs) {
-    //""" Return a dict of link_name: offset from a symbol table. """
-    assert(sym_tbl_msgs.length == 1);
-    assert(sym_tbl_msgs[0].get('size') == 16);
-    let symbol_table_message = _unpack_struct_from(
-      SYMBOL_TABLE_MSG, this.fh,
-      sym_tbl_msgs[0].get('offset_to_message'));
-
-    var btree = new BTree(this.fh, symbol_table_message.get('btree_address'));
-    var heap = new Heap(this.fh, symbol_table_message.get('heap_address'));
-    var links = {};
-    for (var symbol_table_address of btree.symbol_table_addresses()) {
-      let table = new SymbolTable(this.fh, symbol_table_address);
-      table.assign_name(heap);
-      let new_links = table.get_links(heap);
-      for (var lk in new_links) {
-        links[lk] = new_links[lk];
-      }
-      //links.update(table.get_links())
-    }
-    return links
-  }
-
-  _get_links_from_link_msgs() {
-    //""" Retrieve links from link messages. """
-    var links = {}
-    var link_msgs = this.find_msg_type(LINK_MSG_TYPE);
-    for (var link_msg of link_msgs) {
-      let offset = link_msg.get('offset_to_message');
-      var [version, flags] = struct.unpack_from('<BB', this.fh, offset);
-      offset += 2;
-      assert(version == 1);
-      let size_of_length_of_link_name = Math.pow(2, (flags & 0b00000011));
-      let link_type_field_present = flags & 0b00001000;
-      let link_name_character_set_field_present = flags & 0b00010000;
-      var link_type;
-      if (link_type_field_present) {
-        link_type = struct.unpack_from('<B', this.fh, offset)[0];
-        offset += 1;
-      }
-      else {
-        link_type = 0;
-      }
-      assert(link_type == 0 || link_type == 1);
-      if (flags & 0b00000100) {
-        //# creation order present
-        offset += 8;
-      }
-      var link_name_character_set;
-      if (link_name_character_set_field_present) {
-        link_name_character_set = struct.unpack_from('<B', this.fh, offset)[0];
-        offset += 1;
-      }
-      else {
-        link_name_character_set = 0;
-      }
-
-      let encoding = (link_name_character_set == 0) ? 'ascii' : 'utf-8';
-
-      let name_size_fmt = ["<B", "<H", "<I", "<Q"][flags & 3]
-      let name_size = struct.unpack_from(name_size_fmt, this.fh, offset)[0]
-      offset += size_of_length_of_link_name;
-      let name = new TextDecoder(encoding).decode(this.fh.slice(offset, offset + name_size));
-      offset += name_size;
-
-      if (link_type == 0) {
-        //# hard link
-        let address = struct.unpack_from('<Q', this.fh, offset)[0];
-        links[name] = address;
-      }
-      else if (link_type == 1) {
-        //# soft link
-        let length_of_soft_link_value = struct.unpack_from('<H', this.fh, offset)[0];
-        offset += 2;
-        links[name] = new TextDecoder('utf-8').decode(this.fh.slice(offset, offset + length_of_soft_link_value));
-      }
-    }
-    return links
-  }
-
   get is_dataset() {
     //""" True when DataObjects points to a dataset, False for a group. """
     return ((this.find_msg_type(DATASPACE_MSG_TYPE)).length > 0);
   }
 
+  /**
+   * Return the data pointed to in the DataObject
+   *
+   * @returns {Array}
+   * @memberof DataObjects
+   */
   get_data() {
-    //""" Return the data pointed to in the DataObject. """
-
-    //# offset and size from data storage message
+    // offset and size from data storage message:
     let msg = this.find_msg_type(DATA_STORAGE_MSG_TYPE)[0];
     let msg_offset = msg.get('offset_to_message');
     var [version, dims, layout_class, property_offset] = (
