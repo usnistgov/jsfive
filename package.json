@@ -2,15 +2,24 @@
   "name": "jsfive",
   "version": "0.3.0",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
+  "main": "nodejs/index.js",
   "module": "index.js",
   "browser": "dist/hdf5.js",
   "scripts": {
-    "build": "parcel build browser_index.js --target browser"
+    "build": "parcel build browser_index.js --target browser",
+    "build_node": "parcel build index.js --target node"
   },
   "targets": {
     "browser": {
       "context": "browser",
       "outputFormat": "global"
+    },
+    "node": {
+      "context": "node",
+      "distDir": "nodejs",
+      "engines": {
+        "node": "^8.0.0"
+      }
     }
   },
   "repository": {
