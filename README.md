@@ -21,6 +21,7 @@ See a live [demo](https://ncnr.nist.gov/ncnrdata/view/nexus-hdf-viewer.html?path
 * currently the getitem syntax is not supported, but it will likely be soon, for browsers that support object Proxy (not IE), so you have to do say f.get('entry/dataset') instead of f['entry/dataset']
 
 ## Installation/use
+### Browser:
 Clone this repo to somewhere accessible to your webpage, then in your main module (entrypoint) for your app import it as e.g. 
 
     import * as hdf5 from './jsfive/index.js';
@@ -59,3 +60,27 @@ Or if you want to upload a file to work with, into the browser:
       reader.readAsArrayBuffer(file);
       file_input.value = "";
     }
+
+### nodejs
+
+    npm install git+https://github.com/usnistgov/jsfive.git
+
+Then e.g. in node REPL:
+```
+$ node
+Welcome to Node.js v14.17.4.
+Type ".help" for more information.
+> const hdf5 = require("jsfive")
+undefined
+> var fs = require("fs");
+undefined
+> var ab = fs.readFileSync("/home/brian/Downloads/sans4490.nxs.ngv");
+undefined
+> var f = new hdf5.File(ab.buffer);
+undefined
+> f.keys
+[ 'entry' ]
+> f.get("entry").attrs
+{ NX_class: 'NXentry' }
+> 
+```
