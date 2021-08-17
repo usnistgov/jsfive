@@ -1,6 +1,6 @@
 {
   "name": "jsfive",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "dist/index.js",
   "module": "index.js",
