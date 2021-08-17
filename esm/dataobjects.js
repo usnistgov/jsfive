@@ -563,7 +563,7 @@ export class DataObjects {
     let heap_address = data.get("heap_address");
     let name_btree_address = data.get("name_btree_address");
     let order_btree_address = data.get("order_btree_address");
-    if (name_btree_address != UNDEFINED_ADDRESS) {
+    if (name_btree_address != null) {
       yield* this._iter_links_btree_v2(name_btree_address, order_btree_address, heap_address);
     }
   }
