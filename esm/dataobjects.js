@@ -495,7 +495,7 @@ export class DataObjects {
   _get_link_from_link_msg(link_msg) {
     //""" Retrieve link from link message. """
     let offset = link_msg.get('offset_to_message');
-    return this._decode_link_msg(this.msg_data, offset)[1];
+    return this._decode_link_msg(this.fh, offset)[1];;
   }
 
   _decode_link_msg(data, offset) {
