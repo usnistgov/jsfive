@@ -29,13 +29,13 @@ export class Group {
    * @member {Object} _attrs;
    * @member {Array<string>} _keys;
    */
-  parent;
-  file;
-  name;
-  _links;
-  _dataobjects;
-  _attrs;
-  _keys;
+  // parent;
+  // file;
+  // name;
+  // _links;
+  // _dataobjects;
+  // _attrs;
+  // _keys;
 
   /**
    * 
@@ -313,12 +313,12 @@ export class Dataset extends Array {
    * @member {Object} _attrs;
    * @member {string} _astype;
    */
-  parent;
-  file;
-  name;
-  _dataobjects;
-  _attrs;
-  _astype;
+  // parent;
+  // file;
+  // name;
+  // _dataobjects;
+  // _attrs;
+  // _astype;
 
   constructor(name, dataobjects, parent) {
     //""" initalize. """
