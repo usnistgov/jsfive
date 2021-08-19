@@ -84,3 +84,10 @@ undefined
 { NX_class: 'NXentry' }
 > 
 ```
+
+### create-react-app
+in App.js, import as:
+```js
+import * as hdf5 from 'jsfive/dist';
+```
+ (if you don't explicitly import dist or dist/index.js it will get the browser library or the ES6 library, neither of which will work as expected)
