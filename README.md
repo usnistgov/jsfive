@@ -1,6 +1,6 @@
 # jsfive: A pure javascript HDF5 file reader
 
-jsfive is a library for reading (not writing, at the moment) HDF5 files using pure javascript, such as in the browser.  It is based on the [pyfive](https://github.com/jjhelmus/pyfive) pure-python implementation of an HDF5 reader.
+jsfive is a library for reading (not writing) HDF5 files using pure javascript, such as in the browser.  It is based on the [pyfive](https://github.com/jjhelmus/pyfive) pure-python implementation of an HDF5 reader.
 Not all features of HDF5 are supported, but some key ones that are:
 
 * data chunking
@@ -9,6 +9,8 @@ Not all features of HDF5 are supported, but some key ones that are:
 It is only for reading HDF5 files as an ArrayBuffer representation of the file.
 
 See a live [demo](https://ncnr.nist.gov/ncnrdata/view/nexus-hdf-viewer.html?pathlist=ncnrdata+ng7sans+201911+nonims83+data&filename=sans102051.nxs.ng7): center pane shows collapsible folder structure and right panel shows data and attributes.
+
+If you need to write HDF5 files in javascript consider using [h5wasm](https://github.com/bmaranville/h5wasm) instead (also provides efficient slicing of large datasets, and uses direct filesystem access in nodejs). 
 
 ## Dependencies
  * ES6 module support (current versions of Firefox and Chrome work)
