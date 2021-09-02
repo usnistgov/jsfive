@@ -10,7 +10,7 @@ It is only for reading HDF5 files as an ArrayBuffer representation of the file.
 
 See a live [demo](https://ncnr.nist.gov/ncnrdata/view/nexus-hdf-viewer.html?pathlist=ncnrdata+ng7sans+201911+nonims83+data&filename=sans102051.nxs.ng7): center pane shows collapsible folder structure and right panel shows data and attributes.
 
-If you need to write HDF5 files in javascript consider using [h5wasm](https://github.com/bmaranville/h5wasm) instead (also provides efficient slicing of large datasets, and uses direct filesystem access in nodejs). 
+If you need to write HDF5 files in javascript consider using h5wasm ([github](https://github.com/usnistgov/h5wasm), [npm](https://www.npmjs.com/package/h5wasm)) instead (also provides efficient slicing of large datasets, and uses direct filesystem access in nodejs). 
 
 ## Dependencies
  * ES6 module support (current versions of Firefox and Chrome work)
