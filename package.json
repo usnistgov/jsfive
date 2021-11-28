@@ -38,7 +38,8 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
-    "pako-es": "^1.0.9"
+    "pako-es": "^1.0.9",
+    "vbzjs": "file:../vbz_js"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.14.5",

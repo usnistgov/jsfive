@@ -313,6 +313,11 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       }
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
+
+      if (filter_id == VBZ_FILTER) {
+        chunk_buffer_out = zlib.decompress(chunk_buffer_out);
+      }
+
       if (filter_id == GZIP_DEFLATE_FILTER) {
         chunk_buffer_out = zlib.decompress(chunk_buffer_out);
       }
@@ -604,6 +609,7 @@ var RESERVED_FILTER = 0;
 export const GZIP_DEFLATE_FILTER = 1;
 export const SHUFFLE_FILTER = 2;
 export const FLETCH32_FILTER = 3;
+export const VBZ_FILTER = 32020;
 var SZIP_FILTER = 4;
 var NBIT_FILTER = 5;
 var SCALEOFFSET_FILTER = 6;
