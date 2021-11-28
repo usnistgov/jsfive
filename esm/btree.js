@@ -1,5 +1,6 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
 import {default as pako} from '../web_modules/pako-es.js';
+import { vbz, decompress } from 'vbzjs';
 
 const zlib = {
   decompress: function(buf) {
@@ -314,8 +315,11 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
 
+      console.log('FILTERID', filter_id, chunk_buffer_out);
+
       if (filter_id == VBZ_FILTER) {
-        chunk_buffer_out = zlib.decompress(chunk_buffer_out);
+        console.log('IN VBZ');
+        chunk_buffer_out = decompress(chunk_buffer_out);
       }
 
       if (filter_id == GZIP_DEFLATE_FILTER) {
