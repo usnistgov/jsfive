@@ -317,13 +317,12 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
 
       console.log('FILTERID', filter_id, chunk_buffer_out);
 
-      if (filter_id == VBZ_FILTER) {
-        console.log('IN VBZ');
-        chunk_buffer_out = decompress(chunk_buffer_out);
-      }
-
       if (filter_id == GZIP_DEFLATE_FILTER) {
         chunk_buffer_out = zlib.decompress(chunk_buffer_out);
+      }
+      
+      else if (filter_id == VBZ_FILTER) {
+        chunk_buffer_out = decompress(chunk_buffer_out).buffer;
       }
 
       else if (filter_id == SHUFFLE_FILTER) {
@@ -347,6 +346,7 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
           throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
       }
     }
+    console.log('BUFFER OUT', chunk_buffer_out.buffer);
     return chunk_buffer_out;
   }   
 }
