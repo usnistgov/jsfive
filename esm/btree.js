@@ -315,14 +315,15 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
 
-      console.log('FILTERID', filter_id, chunk_buffer_out);
-
       if (filter_id == GZIP_DEFLATE_FILTER) {
         chunk_buffer_out = zlib.decompress(chunk_buffer_out);
       }
       
       else if (filter_id == VBZ_FILTER) {
-        chunk_buffer_out = decompress(chunk_buffer_out).buffer;
+        console.log('BUFFER IN', filter_id, new Int16Array(chunk_buffer_out, 0, Math.floor(chunk_buffer_out.byteLength / 2)));
+        chunk_buffer_out = decompress(chunk_buffer_out);
+        // decompress(chunk_buffer_out, 1, true).then(res => console.log('PROMISE RES', res));
+        console.log('BUFFER OUT', new Int16Array(chunk_buffer_out, 0, Math.floor(chunk_buffer_out.byteLength / 2)));
       }
 
       else if (filter_id == SHUFFLE_FILTER) {
@@ -346,7 +347,6 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
           throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
       }
     }
-    console.log('BUFFER OUT', chunk_buffer_out.buffer);
     return chunk_buffer_out;
   }   
 }
