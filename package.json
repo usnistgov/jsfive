@@ -12,7 +12,7 @@
   "targets": {
     "browser": {
       "context": "browser",
-      "outputFormat": "global"
+      "outputFormat": "commonjs"
     },
     "main": {
       "context": "node",
@@ -38,11 +38,12 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
+    "@swc/helpers": "^0.3.2",
     "pako-es": "^1.0.9"
   },
   "devDependencies": {
     "@babel/plugin-proposal-class-properties": "^7.14.5",
-    "parcel": "^2.0.0-beta.2"
+    "parcel": "^2.0.1"
   },
   "publishConfig": {
     "access": "public"
