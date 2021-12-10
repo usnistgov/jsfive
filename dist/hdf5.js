@@ -1,2 +1,6073 @@
-!function(){function e(e,t,i){Object.defineProperty(e,t,{get:i,enumerable:!0})}var t={};function i(e,t,i=0){var s=new Map;for(let[r,n]of e.entries()){let e=_.unpack_from("<"+n,t,i);i+=_.calcsize(n),1==e.length&&(e=e[0]),s.set(r,e)}return s}function s(e){e||e()}function r(e){var t="<"+Array.from(e.values()).join("");return _.calcsize(t)}function n(e,t=8){return Math.ceil(e/t)*t}var a={u:"Uint",i:"Int",f:"Float"};function o(e){var t,i,s=_._is_big_endian(e);if(/S/.test(e))t="getString",i=0|((e.match(/S(\d*)/)||[])[1]||1);else{let[s,r,n]=e.match(/[<>=!@]?(i|u|f)(\d*)/);i=parseInt(n||4,10),t="get"+a[r]+(8*i).toFixed()}return[t,s,i]}const _=new class{constructor(){this.big_endian=function(){const e=new Uint8Array(4);return!((new Uint32Array(e.buffer)[0]=1)&e[0])}(),this.getters={s:"getUint8",b:"getInt8",B:"getUint8",h:"getInt16",H:"getUint16",i:"getInt32",I:"getUint32",l:"getInt32",L:"getUint32",q:"getInt64",Q:"getUint64",f:"getFloat32",d:"getFloat64"},this.byte_lengths={s:1,b:1,B:1,h:2,H:2,i:4,I:4,l:4,L:4,q:8,Q:8,f:4,d:8};let e=Object.keys(this.byte_lengths).join("");this.fmt_size_regex="(\\d*)(["+e+"])"}calcsize(e){for(var t,i=0,s=new RegExp(this.fmt_size_regex,"g");null!==(t=s.exec(e));){let e=parseInt(t[1]||1,10),s=t[2];i+=e*this.byte_lengths[s]}return i}_is_big_endian(e){return!/^</.test(e)&&(!!/^(!|>)/.test(e)||this.big_endian)}unpack_from(e,t,i){i=Number(i||0);for(var s,r=new l(t,0),n=[],a=this._is_big_endian(e),o=new RegExp(this.fmt_size_regex,"g");null!==(s=o.exec(e));){let e=parseInt(s[1]||1,10),t=s[2],o=this.getters[t],l=this.byte_lengths[t];var _;if("s"==t){var h=new Array;_=h}else _=n;for(var d=0;d<e;d++)_.push(r[o](i,!a)),i+=l;"s"==t&&n.push(h.reduce((function(e,t){return e+String.fromCharCode(t)}),""))}return n}};class l extends DataView{getUint64(e,t){const i=BigInt(this.getUint32(e,t)),s=BigInt(this.getUint32(e+4,t));let r=t?i+(s<<32n):(i<<32n)+s;return Number(r)}getInt64(e,t){var i,s;t?(i=this.getUint32(e,!0),s=this.getInt32(e+4,!0)):(s=this.getInt32(e,!1),i=this.getUint32(e+4,!1));let r=BigInt(i)+(BigInt(s)<<32n);return Number(r)}getString(e,t,i){for(var s="",r=0;r<i;r++){let t=this.getUint8(e+r);t&&(s+=String.fromCharCode(t))}return decodeURIComponent(escape(s))}getVLENStruct(e,t,i){return[this.getUint32(e,t),this.getUint64(e+4,t),this.getUint32(e+12,t)]}}function h(e){return e.toString(2).length}function d(e,t,i=0,s=!0){let r=new Uint8Array(t.slice(i,i+e));return s||r.reverse(),r.reduce(((e,t,i)=>e+(t<<8*i)),0)}new Map([["item_size","I"],["collection_address","Q"],["object_index","I"]]);class f{constructor(e,t){this.buf=e,this.offset=t,this.dtype=this.determine_dtype()}determine_dtype(){let e=i(c,this.buf,this.offset);this.offset+=u;let t=15&e.get("class_and_version");if(t==g)return this._determine_dtype_fixed_point(e);if(t==p)return this._determine_dtype_floating_point(e);if(t==m)throw"Time datatype class not supported.";if(t==b)return this._determine_dtype_string(e);if(t==w)throw"Bitfield datatype class not supported.";if(t==v)throw"Opaque datatype class not supported.";if(t==k)return this._determine_dtype_compound(e);if(t==y)return["REFERENCE",e.get("size")];if(t==z)throw"Enumerated datatype class not supported.";if(t==B)throw"Array datatype class not supported.";if(t==x){let t=this._determine_dtype_vlen(e);if("VLEN_SEQUENCE"==t[0]){t=["VLEN_SEQUENCE",this.determine_dtype()]}return t}throw"Invalid datatype class "+t}_determine_dtype_fixed_point(e){let t=e.get("size");if(![1,2,4,8].includes(t))throw"Unsupported datatype size";var i;var s;return i=(8&e.get("class_bit_field_0"))>0?"i":"u",s=0==(1&e.get("class_bit_field_0"))?"<":">",this.offset+=4,s+i+t.toFixed()}_determine_dtype_floating_point(e){let t=e.get("size");if(![1,2,4,8].includes(t))throw"Unsupported datatype size";var i;return i=0==(1&e.get("class_bit_field_0"))?"<":">",this.offset+=12,i+"f"+t.toFixed()}_determine_dtype_string(e){return"S"+e.get("size").toFixed()}_determine_dtype_vlen(e){return 1!=(1&e.get("class_bit_field_0"))?["VLEN_SEQUENCE",0,0]:["VLEN_STRING",e.get("class_bit_field_0")>>4,1&e.get("class_bit_field_1")]}_determine_dtype_compound(e){throw"not yet implemented!"}}var c=new Map([["class_and_version","B"],["class_bit_field_0","B"],["class_bit_field_1","B"],["class_bit_field_2","B"],["size","I"]]),u=r(c),g=(r(new Map([["offset","I"],["dimensionality","B"],["reserved_0","B"],["reserved_1","B"],["reserved_2","B"],["permutation","I"],["reserved_3","I"],["dim_size_1","I"],["dim_size_2","I"],["dim_size_3","I"],["dim_size_4","I"]])),0),p=1,m=2,b=3,w=4,v=5,k=6,y=7,z=8,x=9,B=10,E="undefined"!=typeof Uint8Array&&"undefined"!=typeof Uint16Array&&"undefined"!=typeof Int32Array;function I(e,t){return Object.prototype.hasOwnProperty.call(e,t)}function j(e){for(var t=Array.prototype.slice.call(arguments,1);t.length;){var i=t.shift();if(i){if("object"!=typeof i)throw new TypeError(i+"must be non-object");for(var s in i)I(i,s)&&(e[s]=i[s])}}return e}function N(e,t){return e.length===t?e:e.subarray?e.subarray(0,t):(e.length=t,e)}var A={arraySet:function(e,t,i,s,r){for(var n=0;n<s;n++)e[r+n]=t[i+n]},flattenChunks:function(e){return[].concat.apply([],e)}};const Q={};E?j(Q,{arraySet:function(e,t,i,s,r){if(t.subarray&&e.subarray)e.set(t.subarray(i,i+s),r);else for(var n=0;n<s;n++)e[r+n]=t[i+n]},flattenChunks:function(e){var t,i,s,r,n,a;for(s=0,t=0,i=e.length;t<i;t++)s+=e[t].length;for(a=new Uint8Array(s),r=0,t=0,i=e.length;t<i;t++)n=e[t],a.set(n,r),r+=n.length;return a}},{Buf8:Uint8Array,Buf16:Uint16Array,Buf32:Int32Array}):j(Q,A,{Buf8:Array,Buf16:Array,Buf32:Array});let H=Q.Buf8,S=Q.Buf16,U=Q.Buf32,M=Q.arraySet,F=Q.flattenChunks;function R(e){for(var t=e.length;--t>=0;)e[t]=0}var O=256,D=286,C=30,L=15,Z=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0],T=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13],K=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,3,7],V=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15],P=new Array(576);R(P);var Y=new Array(60);R(Y);var G=new Array(512);R(G);var $=new Array(256);R($);var q=new Array(29);R(q);var X,W,J,ee=new Array(C);function te(e,t,i,s,r){this.static_tree=e,this.extra_bits=t,this.extra_base=i,this.elems=s,this.max_length=r,this.has_stree=e&&e.length}function ie(e,t){this.dyn_tree=e,this.max_code=0,this.stat_desc=t}function se(e){return e<256?G[e]:G[256+(e>>>7)]}function re(e,t){e.pending_buf[e.pending++]=255&t,e.pending_buf[e.pending++]=t>>>8&255}function ne(e,t,i){e.bi_valid>16-i?(e.bi_buf|=t<<e.bi_valid&65535,re(e,e.bi_buf),e.bi_buf=t>>16-e.bi_valid,e.bi_valid+=i-16):(e.bi_buf|=t<<e.bi_valid&65535,e.bi_valid+=i)}function ae(e,t,i){ne(e,i[2*t],i[2*t+1])}function oe(e,t){var i=0;do{i|=1&e,e>>>=1,i<<=1}while(--t>0);return i>>>1}function _e(e,t,i){var s,r,n=new Array(16),a=0;for(s=1;s<=L;s++)n[s]=a=a+i[s-1]<<1;for(r=0;r<=t;r++){var o=e[2*r+1];0!==o&&(e[2*r]=oe(n[o]++,o))}}function le(e){var t;for(t=0;t<D;t++)e.dyn_ltree[2*t]=0;for(t=0;t<C;t++)e.dyn_dtree[2*t]=0;for(t=0;t<19;t++)e.bl_tree[2*t]=0;e.dyn_ltree[512]=1,e.opt_len=e.static_len=0,e.last_lit=e.matches=0}function he(e){e.bi_valid>8?re(e,e.bi_buf):e.bi_valid>0&&(e.pending_buf[e.pending++]=e.bi_buf),e.bi_buf=0,e.bi_valid=0}function de(e,t,i,s){var r=2*t,n=2*i;return e[r]<e[n]||e[r]===e[n]&&s[t]<=s[i]}function fe(e,t,i){for(var s=e.heap[i],r=i<<1;r<=e.heap_len&&(r<e.heap_len&&de(t,e.heap[r+1],e.heap[r],e.depth)&&r++,!de(t,s,e.heap[r],e.depth));)e.heap[i]=e.heap[r],i=r,r<<=1;e.heap[i]=s}function ce(e,t,i){var s,r,n,a,o=0;if(0!==e.last_lit)do{s=e.pending_buf[e.d_buf+2*o]<<8|e.pending_buf[e.d_buf+2*o+1],r=e.pending_buf[e.l_buf+o],o++,0===s?ae(e,r,t):(ae(e,(n=$[r])+O+1,t),0!==(a=Z[n])&&ne(e,r-=q[n],a),ae(e,n=se(--s),i),0!==(a=T[n])&&ne(e,s-=ee[n],a))}while(o<e.last_lit);ae(e,256,t)}function ue(e,t){var i,s,r,n=t.dyn_tree,a=t.stat_desc.static_tree,o=t.stat_desc.has_stree,_=t.stat_desc.elems,l=-1;for(e.heap_len=0,e.heap_max=573,i=0;i<_;i++)0!==n[2*i]?(e.heap[++e.heap_len]=l=i,e.depth[i]=0):n[2*i+1]=0;for(;e.heap_len<2;)n[2*(r=e.heap[++e.heap_len]=l<2?++l:0)]=1,e.depth[r]=0,e.opt_len--,o&&(e.static_len-=a[2*r+1]);for(t.max_code=l,i=e.heap_len>>1;i>=1;i--)fe(e,n,i);r=_;do{i=e.heap[1],e.heap[1]=e.heap[e.heap_len--],fe(e,n,1),s=e.heap[1],e.heap[--e.heap_max]=i,e.heap[--e.heap_max]=s,n[2*r]=n[2*i]+n[2*s],e.depth[r]=(e.depth[i]>=e.depth[s]?e.depth[i]:e.depth[s])+1,n[2*i+1]=n[2*s+1]=r,e.heap[1]=r++,fe(e,n,1)}while(e.heap_len>=2);e.heap[--e.heap_max]=e.heap[1],function(e,t){var i,s,r,n,a,o,_=t.dyn_tree,l=t.max_code,h=t.stat_desc.static_tree,d=t.stat_desc.has_stree,f=t.stat_desc.extra_bits,c=t.stat_desc.extra_base,u=t.stat_desc.max_length,g=0;for(n=0;n<=L;n++)e.bl_count[n]=0;for(_[2*e.heap[e.heap_max]+1]=0,i=e.heap_max+1;i<573;i++)(n=_[2*_[2*(s=e.heap[i])+1]+1]+1)>u&&(n=u,g++),_[2*s+1]=n,s>l||(e.bl_count[n]++,a=0,s>=c&&(a=f[s-c]),o=_[2*s],e.opt_len+=o*(n+a),d&&(e.static_len+=o*(h[2*s+1]+a)));if(0!==g){do{for(n=u-1;0===e.bl_count[n];)n--;e.bl_count[n]--,e.bl_count[n+1]+=2,e.bl_count[u]--,g-=2}while(g>0);for(n=u;0!==n;n--)for(s=e.bl_count[n];0!==s;)(r=e.heap[--i])>l||(_[2*r+1]!==n&&(e.opt_len+=(n-_[2*r+1])*_[2*r],_[2*r+1]=n),s--)}}(e,t),_e(n,l,e.bl_count)}function ge(e,t,i){var s,r,n=-1,a=t[1],o=0,_=7,l=4;for(0===a&&(_=138,l=3),t[2*(i+1)+1]=65535,s=0;s<=i;s++)r=a,a=t[2*(s+1)+1],++o<_&&r===a||(o<l?e.bl_tree[2*r]+=o:0!==r?(r!==n&&e.bl_tree[2*r]++,e.bl_tree[32]++):o<=10?e.bl_tree[34]++:e.bl_tree[36]++,o=0,n=r,0===a?(_=138,l=3):r===a?(_=6,l=3):(_=7,l=4))}function pe(e,t,i){var s,r,n=-1,a=t[1],o=0,_=7,l=4;for(0===a&&(_=138,l=3),s=0;s<=i;s++)if(r=a,a=t[2*(s+1)+1],!(++o<_&&r===a)){if(o<l)do{ae(e,r,e.bl_tree)}while(0!=--o);else 0!==r?(r!==n&&(ae(e,r,e.bl_tree),o--),ae(e,16,e.bl_tree),ne(e,o-3,2)):o<=10?(ae(e,17,e.bl_tree),ne(e,o-3,3)):(ae(e,18,e.bl_tree),ne(e,o-11,7));o=0,n=r,0===a?(_=138,l=3):r===a?(_=6,l=3):(_=7,l=4)}}R(ee);var me=!1;function be(e){me||(!function(){var e,t,i,s,r,n=new Array(16);for(i=0,s=0;s<28;s++)for(q[s]=i,e=0;e<1<<Z[s];e++)$[i++]=s;for($[i-1]=s,r=0,s=0;s<16;s++)for(ee[s]=r,e=0;e<1<<T[s];e++)G[r++]=s;for(r>>=7;s<C;s++)for(ee[s]=r<<7,e=0;e<1<<T[s]-7;e++)G[256+r++]=s;for(t=0;t<=L;t++)n[t]=0;for(e=0;e<=143;)P[2*e+1]=8,e++,n[8]++;for(;e<=255;)P[2*e+1]=9,e++,n[9]++;for(;e<=279;)P[2*e+1]=7,e++,n[7]++;for(;e<=287;)P[2*e+1]=8,e++,n[8]++;for(_e(P,287,n),e=0;e<C;e++)Y[2*e+1]=5,Y[2*e]=oe(e,5);X=new te(P,Z,257,D,L),W=new te(Y,T,0,C,L),J=new te(new Array(0),K,0,19,7)}(),me=!0),e.l_desc=new ie(e.dyn_ltree,X),e.d_desc=new ie(e.dyn_dtree,W),e.bl_desc=new ie(e.bl_tree,J),e.bi_buf=0,e.bi_valid=0,le(e)}function we(e,t,i,s){ne(e,0+(s?1:0),3),function(e,t,i,s){he(e),s&&(re(e,i),re(e,~i)),M(e.pending_buf,e.window,t,i,e.pending),e.pending+=i}(e,t,i,!0)}function ve(e){ne(e,2,3),ae(e,256,P),function(e){16===e.bi_valid?(re(e,e.bi_buf),e.bi_buf=0,e.bi_valid=0):e.bi_valid>=8&&(e.pending_buf[e.pending++]=255&e.bi_buf,e.bi_buf>>=8,e.bi_valid-=8)}(e)}function ke(e,t,i,s){var r,n,a=0;e.level>0?(2===e.strm.data_type&&(e.strm.data_type=function(e){var t,i=4093624447;for(t=0;t<=31;t++,i>>>=1)if(1&i&&0!==e.dyn_ltree[2*t])return 0;if(0!==e.dyn_ltree[18]||0!==e.dyn_ltree[20]||0!==e.dyn_ltree[26])return 1;for(t=32;t<O;t++)if(0!==e.dyn_ltree[2*t])return 1;return 0}(e)),ue(e,e.l_desc),ue(e,e.d_desc),a=function(e){var t;for(ge(e,e.dyn_ltree,e.l_desc.max_code),ge(e,e.dyn_dtree,e.d_desc.max_code),ue(e,e.bl_desc),t=18;t>=3&&0===e.bl_tree[2*V[t]+1];t--);return e.opt_len+=3*(t+1)+5+5+4,t}(e),r=e.opt_len+3+7>>>3,(n=e.static_len+3+7>>>3)<=r&&(r=n)):r=n=i+5,i+4<=r&&-1!==t?we(e,t,i,s):4===e.strategy||n===r?(ne(e,2+(s?1:0),3),ce(e,P,Y)):(ne(e,4+(s?1:0),3),function(e,t,i,s){var r;for(ne(e,t-257,5),ne(e,i-1,5),ne(e,s-4,4),r=0;r<s;r++)ne(e,e.bl_tree[2*V[r]+1],3);pe(e,e.dyn_ltree,t-1),pe(e,e.dyn_dtree,i-1)}(e,e.l_desc.max_code+1,e.d_desc.max_code+1,a+1),ce(e,e.dyn_ltree,e.dyn_dtree)),le(e),s&&he(e)}function ye(e,t,i){return e.pending_buf[e.d_buf+2*e.last_lit]=t>>>8&255,e.pending_buf[e.d_buf+2*e.last_lit+1]=255&t,e.pending_buf[e.l_buf+e.last_lit]=255&i,e.last_lit++,0===t?e.dyn_ltree[2*i]++:(e.matches++,t--,e.dyn_ltree[2*($[i]+O+1)]++,e.dyn_dtree[2*se(t)]++),e.last_lit===e.lit_bufsize-1}function ze(e,t,i,s){for(var r=65535&e|0,n=e>>>16&65535|0,a=0;0!==i;){i-=a=i>2e3?2e3:i;do{n=n+(r=r+t[s++]|0)|0}while(--a);r%=65521,n%=65521}return r|n<<16|0}var xe=function(){for(var e,t=[],i=0;i<256;i++){e=i;for(var s=0;s<8;s++)e=1&e?3988292384^e>>>1:e>>>1;t[i]=e}return t}();function Be(e,t,i,s){var r=xe,n=s+i;e^=-1;for(var a=s;a<n;a++)e=e>>>8^r[255&(e^t[a])];return-1^e}var Ee,Ie={2:"need dictionary",1:"stream end",0:"","-1":"file error","-2":"stream error","-3":"data error","-4":"insufficient memory","-5":"buffer error","-6":"incompatible version"},je=-2,Ne=258,Ae=262,Qe=103,He=113,Se=666;function Ue(e,t){return e.msg=Ie[t],t}function Me(e){return(e<<1)-(e>4?9:0)}function Fe(e){for(var t=e.length;--t>=0;)e[t]=0}function Re(e){var t=e.state,i=t.pending;i>e.avail_out&&(i=e.avail_out),0!==i&&(M(e.output,t.pending_buf,t.pending_out,i,e.next_out),e.next_out+=i,t.pending_out+=i,e.total_out+=i,e.avail_out-=i,t.pending-=i,0===t.pending&&(t.pending_out=0))}function Oe(e,t){ke(e,e.block_start>=0?e.block_start:-1,e.strstart-e.block_start,t),e.block_start=e.strstart,Re(e.strm)}function De(e,t){e.pending_buf[e.pending++]=t}function Ce(e,t){e.pending_buf[e.pending++]=t>>>8&255,e.pending_buf[e.pending++]=255&t}function Le(e,t){var i,s,r=e.max_chain_length,n=e.strstart,a=e.prev_length,o=e.nice_match,_=e.strstart>e.w_size-Ae?e.strstart-(e.w_size-Ae):0,l=e.window,h=e.w_mask,d=e.prev,f=e.strstart+Ne,c=l[n+a-1],u=l[n+a];e.prev_length>=e.good_match&&(r>>=2),o>e.lookahead&&(o=e.lookahead);do{if(l[(i=t)+a]===u&&l[i+a-1]===c&&l[i]===l[n]&&l[++i]===l[n+1]){n+=2,i++;do{}while(l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&l[++n]===l[++i]&&n<f);if(s=Ne-(f-n),n=f-Ne,s>a){if(e.match_start=t,a=s,s>=o)break;c=l[n+a-1],u=l[n+a]}}}while((t=d[t&h])>_&&0!=--r);return a<=e.lookahead?a:e.lookahead}function Ze(e){var t,i,s,r,n,a,o,_,l,h,d=e.w_size;do{if(r=e.window_size-e.lookahead-e.strstart,e.strstart>=d+(d-Ae)){M(e.window,e.window,d,d,0),e.match_start-=d,e.strstart-=d,e.block_start-=d,t=i=e.hash_size;do{s=e.head[--t],e.head[t]=s>=d?s-d:0}while(--i);t=i=d;do{s=e.prev[--t],e.prev[t]=s>=d?s-d:0}while(--i);r+=d}if(0===e.strm.avail_in)break;if(a=e.strm,o=e.window,_=e.strstart+e.lookahead,l=r,h=void 0,(h=a.avail_in)>l&&(h=l),i=0===h?0:(a.avail_in-=h,M(o,a.input,a.next_in,h,_),1===a.state.wrap?a.adler=ze(a.adler,o,h,_):2===a.state.wrap&&(a.adler=Be(a.adler,o,h,_)),a.next_in+=h,a.total_in+=h,h),e.lookahead+=i,e.lookahead+e.insert>=3)for(n=e.strstart-e.insert,e.ins_h=e.window[n],e.ins_h=(e.ins_h<<e.hash_shift^e.window[n+1])&e.hash_mask;e.insert&&(e.ins_h=(e.ins_h<<e.hash_shift^e.window[n+3-1])&e.hash_mask,e.prev[n&e.w_mask]=e.head[e.ins_h],e.head[e.ins_h]=n,n++,e.insert--,!(e.lookahead+e.insert<3)););}while(e.lookahead<Ae&&0!==e.strm.avail_in)}function Te(e,t){for(var i,s;;){if(e.lookahead<Ae){if(Ze(e),e.lookahead<Ae&&0===t)return 1;if(0===e.lookahead)break}if(i=0,e.lookahead>=3&&(e.ins_h=(e.ins_h<<e.hash_shift^e.window[e.strstart+3-1])&e.hash_mask,i=e.prev[e.strstart&e.w_mask]=e.head[e.ins_h],e.head[e.ins_h]=e.strstart),0!==i&&e.strstart-i<=e.w_size-Ae&&(e.match_length=Le(e,i)),e.match_length>=3)if(s=ye(e,e.strstart-e.match_start,e.match_length-3),e.lookahead-=e.match_length,e.match_length<=e.max_lazy_match&&e.lookahead>=3){e.match_length--;do{e.strstart++,e.ins_h=(e.ins_h<<e.hash_shift^e.window[e.strstart+3-1])&e.hash_mask,i=e.prev[e.strstart&e.w_mask]=e.head[e.ins_h],e.head[e.ins_h]=e.strstart}while(0!=--e.match_length);e.strstart++}else e.strstart+=e.match_length,e.match_length=0,e.ins_h=e.window[e.strstart],e.ins_h=(e.ins_h<<e.hash_shift^e.window[e.strstart+1])&e.hash_mask;else s=ye(e,0,e.window[e.strstart]),e.lookahead--,e.strstart++;if(s&&(Oe(e,!1),0===e.strm.avail_out))return 1}return e.insert=e.strstart<2?e.strstart:2,4===t?(Oe(e,!0),0===e.strm.avail_out?3:4):e.last_lit&&(Oe(e,!1),0===e.strm.avail_out)?1:2}function Ke(e,t){for(var i,s,r;;){if(e.lookahead<Ae){if(Ze(e),e.lookahead<Ae&&0===t)return 1;if(0===e.lookahead)break}if(i=0,e.lookahead>=3&&(e.ins_h=(e.ins_h<<e.hash_shift^e.window[e.strstart+3-1])&e.hash_mask,i=e.prev[e.strstart&e.w_mask]=e.head[e.ins_h],e.head[e.ins_h]=e.strstart),e.prev_length=e.match_length,e.prev_match=e.match_start,e.match_length=2,0!==i&&e.prev_length<e.max_lazy_match&&e.strstart-i<=e.w_size-Ae&&(e.match_length=Le(e,i),e.match_length<=5&&(1===e.strategy||3===e.match_length&&e.strstart-e.match_start>4096)&&(e.match_length=2)),e.prev_length>=3&&e.match_length<=e.prev_length){r=e.strstart+e.lookahead-3,s=ye(e,e.strstart-1-e.prev_match,e.prev_length-3),e.lookahead-=e.prev_length-1,e.prev_length-=2;do{++e.strstart<=r&&(e.ins_h=(e.ins_h<<e.hash_shift^e.window[e.strstart+3-1])&e.hash_mask,i=e.prev[e.strstart&e.w_mask]=e.head[e.ins_h],e.head[e.ins_h]=e.strstart)}while(0!=--e.prev_length);if(e.match_available=0,e.match_length=2,e.strstart++,s&&(Oe(e,!1),0===e.strm.avail_out))return 1}else if(e.match_available){if((s=ye(e,0,e.window[e.strstart-1]))&&Oe(e,!1),e.strstart++,e.lookahead--,0===e.strm.avail_out)return 1}else e.match_available=1,e.strstart++,e.lookahead--}return e.match_available&&(s=ye(e,0,e.window[e.strstart-1]),e.match_available=0),e.insert=e.strstart<2?e.strstart:2,4===t?(Oe(e,!0),0===e.strm.avail_out?3:4):e.last_lit&&(Oe(e,!1),0===e.strm.avail_out)?1:2}function Ve(e,t,i,s,r){this.good_length=e,this.max_lazy=t,this.nice_length=i,this.max_chain=s,this.func=r}function Pe(){this.strm=null,this.status=0,this.pending_buf=null,this.pending_buf_size=0,this.pending_out=0,this.pending=0,this.wrap=0,this.gzhead=null,this.gzindex=0,this.method=8,this.last_flush=-1,this.w_size=0,this.w_bits=0,this.w_mask=0,this.window=null,this.window_size=0,this.prev=null,this.head=null,this.ins_h=0,this.hash_size=0,this.hash_bits=0,this.hash_mask=0,this.hash_shift=0,this.block_start=0,this.match_length=0,this.prev_match=0,this.match_available=0,this.strstart=0,this.match_start=0,this.lookahead=0,this.prev_length=0,this.max_chain_length=0,this.max_lazy_match=0,this.level=0,this.strategy=0,this.good_match=0,this.nice_match=0,this.dyn_ltree=new S(1146),this.dyn_dtree=new S(122),this.bl_tree=new S(78),Fe(this.dyn_ltree),Fe(this.dyn_dtree),Fe(this.bl_tree),this.l_desc=null,this.d_desc=null,this.bl_desc=null,this.bl_count=new S(16),this.heap=new S(573),Fe(this.heap),this.heap_len=0,this.heap_max=0,this.depth=new S(573),Fe(this.depth),this.l_buf=0,this.lit_bufsize=0,this.last_lit=0,this.d_buf=0,this.opt_len=0,this.static_len=0,this.matches=0,this.insert=0,this.bi_buf=0,this.bi_valid=0}function Ye(e){var t,i=function(e){var t;return e&&e.state?(e.total_in=e.total_out=0,e.data_type=2,(t=e.state).pending=0,t.pending_out=0,t.wrap<0&&(t.wrap=-t.wrap),t.status=t.wrap?42:He,e.adler=2===t.wrap?0:1,t.last_flush=0,be(t),0):Ue(e,je)}(e);return 0===i&&((t=e.state).window_size=2*t.w_size,Fe(t.head),t.max_lazy_match=Ee[t.level].max_lazy,t.good_match=Ee[t.level].good_length,t.nice_match=Ee[t.level].nice_length,t.max_chain_length=Ee[t.level].max_chain,t.strstart=0,t.block_start=0,t.lookahead=0,t.insert=0,t.match_length=t.prev_length=2,t.match_available=0,t.ins_h=0),i}function Ge(e,t){var i,s,r,n;if(!e||!e.state||t>5||t<0)return e?Ue(e,je):je;if(s=e.state,!e.output||!e.input&&0!==e.avail_in||s.status===Se&&4!==t)return Ue(e,0===e.avail_out?-5:je);if(s.strm=e,i=s.last_flush,s.last_flush=t,42===s.status)if(2===s.wrap)e.adler=0,De(s,31),De(s,139),De(s,8),s.gzhead?(De(s,(s.gzhead.text?1:0)+(s.gzhead.hcrc?2:0)+(s.gzhead.extra?4:0)+(s.gzhead.name?8:0)+(s.gzhead.comment?16:0)),De(s,255&s.gzhead.time),De(s,s.gzhead.time>>8&255),De(s,s.gzhead.time>>16&255),De(s,s.gzhead.time>>24&255),De(s,9===s.level?2:s.strategy>=2||s.level<2?4:0),De(s,255&s.gzhead.os),s.gzhead.extra&&s.gzhead.extra.length&&(De(s,255&s.gzhead.extra.length),De(s,s.gzhead.extra.length>>8&255)),s.gzhead.hcrc&&(e.adler=Be(e.adler,s.pending_buf,s.pending,0)),s.gzindex=0,s.status=69):(De(s,0),De(s,0),De(s,0),De(s,0),De(s,0),De(s,9===s.level?2:s.strategy>=2||s.level<2?4:0),De(s,3),s.status=He);else{var a=8+(s.w_bits-8<<4)<<8;a|=(s.strategy>=2||s.level<2?0:s.level<6?1:6===s.level?2:3)<<6,0!==s.strstart&&(a|=32),a+=31-a%31,s.status=He,Ce(s,a),0!==s.strstart&&(Ce(s,e.adler>>>16),Ce(s,65535&e.adler)),e.adler=1}if(69===s.status)if(s.gzhead.extra){for(r=s.pending;s.gzindex<(65535&s.gzhead.extra.length)&&(s.pending!==s.pending_buf_size||(s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),Re(e),r=s.pending,s.pending!==s.pending_buf_size));)De(s,255&s.gzhead.extra[s.gzindex]),s.gzindex++;s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),s.gzindex===s.gzhead.extra.length&&(s.gzindex=0,s.status=73)}else s.status=73;if(73===s.status)if(s.gzhead.name){r=s.pending;do{if(s.pending===s.pending_buf_size&&(s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),Re(e),r=s.pending,s.pending===s.pending_buf_size)){n=1;break}n=s.gzindex<s.gzhead.name.length?255&s.gzhead.name.charCodeAt(s.gzindex++):0,De(s,n)}while(0!==n);s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),0===n&&(s.gzindex=0,s.status=91)}else s.status=91;if(91===s.status)if(s.gzhead.comment){r=s.pending;do{if(s.pending===s.pending_buf_size&&(s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),Re(e),r=s.pending,s.pending===s.pending_buf_size)){n=1;break}n=s.gzindex<s.gzhead.comment.length?255&s.gzhead.comment.charCodeAt(s.gzindex++):0,De(s,n)}while(0!==n);s.gzhead.hcrc&&s.pending>r&&(e.adler=Be(e.adler,s.pending_buf,s.pending-r,r)),0===n&&(s.status=Qe)}else s.status=Qe;if(s.status===Qe&&(s.gzhead.hcrc?(s.pending+2>s.pending_buf_size&&Re(e),s.pending+2<=s.pending_buf_size&&(De(s,255&e.adler),De(s,e.adler>>8&255),e.adler=0,s.status=He)):s.status=He),0!==s.pending){if(Re(e),0===e.avail_out)return s.last_flush=-1,0}else if(0===e.avail_in&&Me(t)<=Me(i)&&4!==t)return Ue(e,-5);if(s.status===Se&&0!==e.avail_in)return Ue(e,-5);if(0!==e.avail_in||0!==s.lookahead||0!==t&&s.status!==Se){var o=2===s.strategy?function(e,t){for(var i;;){if(0===e.lookahead&&(Ze(e),0===e.lookahead)){if(0===t)return 1;break}if(e.match_length=0,i=ye(e,0,e.window[e.strstart]),e.lookahead--,e.strstart++,i&&(Oe(e,!1),0===e.strm.avail_out))return 1}return e.insert=0,4===t?(Oe(e,!0),0===e.strm.avail_out?3:4):e.last_lit&&(Oe(e,!1),0===e.strm.avail_out)?1:2}(s,t):3===s.strategy?function(e,t){for(var i,s,r,n,a=e.window;;){if(e.lookahead<=Ne){if(Ze(e),e.lookahead<=Ne&&0===t)return 1;if(0===e.lookahead)break}if(e.match_length=0,e.lookahead>=3&&e.strstart>0&&(s=a[r=e.strstart-1])===a[++r]&&s===a[++r]&&s===a[++r]){n=e.strstart+Ne;do{}while(s===a[++r]&&s===a[++r]&&s===a[++r]&&s===a[++r]&&s===a[++r]&&s===a[++r]&&s===a[++r]&&s===a[++r]&&r<n);e.match_length=Ne-(n-r),e.match_length>e.lookahead&&(e.match_length=e.lookahead)}if(e.match_length>=3?(i=ye(e,1,e.match_length-3),e.lookahead-=e.match_length,e.strstart+=e.match_length,e.match_length=0):(i=ye(e,0,e.window[e.strstart]),e.lookahead--,e.strstart++),i&&(Oe(e,!1),0===e.strm.avail_out))return 1}return e.insert=0,4===t?(Oe(e,!0),0===e.strm.avail_out?3:4):e.last_lit&&(Oe(e,!1),0===e.strm.avail_out)?1:2}(s,t):Ee[s.level].func(s,t);if(3!==o&&4!==o||(s.status=Se),1===o||3===o)return 0===e.avail_out&&(s.last_flush=-1),0;if(2===o&&(1===t?ve(s):5!==t&&(we(s,0,0,!1),3===t&&(Fe(s.head),0===s.lookahead&&(s.strstart=0,s.block_start=0,s.insert=0))),Re(e),0===e.avail_out))return s.last_flush=-1,0}return 4!==t?0:s.wrap<=0?1:(2===s.wrap?(De(s,255&e.adler),De(s,e.adler>>8&255),De(s,e.adler>>16&255),De(s,e.adler>>24&255),De(s,255&e.total_in),De(s,e.total_in>>8&255),De(s,e.total_in>>16&255),De(s,e.total_in>>24&255)):(Ce(s,e.adler>>>16),Ce(s,65535&e.adler)),Re(e),s.wrap>0&&(s.wrap=-s.wrap),0!==s.pending?0:1)}Ee=[new Ve(0,0,0,0,(function(e,t){var i=65535;for(i>e.pending_buf_size-5&&(i=e.pending_buf_size-5);;){if(e.lookahead<=1){if(Ze(e),0===e.lookahead&&0===t)return 1;if(0===e.lookahead)break}e.strstart+=e.lookahead,e.lookahead=0;var s=e.block_start+i;if((0===e.strstart||e.strstart>=s)&&(e.lookahead=e.strstart-s,e.strstart=s,Oe(e,!1),0===e.strm.avail_out))return 1;if(e.strstart-e.block_start>=e.w_size-Ae&&(Oe(e,!1),0===e.strm.avail_out))return 1}return e.insert=0,4===t?(Oe(e,!0),0===e.strm.avail_out?3:4):(e.strstart>e.block_start&&(Oe(e,!1),e.strm.avail_out),1)})),new Ve(4,4,8,4,Te),new Ve(4,5,16,8,Te),new Ve(4,6,32,32,Te),new Ve(4,4,16,16,Ke),new Ve(8,16,32,32,Ke),new Ve(8,16,128,128,Ke),new Ve(8,32,128,256,Ke),new Ve(32,128,258,1024,Ke),new Ve(32,258,258,4096,Ke)];var $e=!0,qe=!0;try{String.fromCharCode.apply(null,[0])}catch(e){$e=!1}try{String.fromCharCode.apply(null,new Uint8Array(1))}catch(e){qe=!1}for(var Xe=new H(256),We=0;We<256;We++)Xe[We]=We>=252?6:We>=248?5:We>=240?4:We>=224?3:We>=192?2:1;function Je(e){var t,i,s,r,n,a=e.length,o=0;for(r=0;r<a;r++)55296==(64512&(i=e.charCodeAt(r)))&&r+1<a&&56320==(64512&(s=e.charCodeAt(r+1)))&&(i=65536+(i-55296<<10)+(s-56320),r++),o+=i<128?1:i<2048?2:i<65536?3:4;for(t=new H(o),n=0,r=0;n<o;r++)55296==(64512&(i=e.charCodeAt(r)))&&r+1<a&&56320==(64512&(s=e.charCodeAt(r+1)))&&(i=65536+(i-55296<<10)+(s-56320),r++),i<128?t[n++]=i:i<2048?(t[n++]=192|i>>>6,t[n++]=128|63&i):i<65536?(t[n++]=224|i>>>12,t[n++]=128|i>>>6&63,t[n++]=128|63&i):(t[n++]=240|i>>>18,t[n++]=128|i>>>12&63,t[n++]=128|i>>>6&63,t[n++]=128|63&i);return t}function et(e,t){if(t<65537&&(e.subarray&&qe||!e.subarray&&$e))return String.fromCharCode.apply(null,N(e,t));for(var i="",s=0;s<t;s++)i+=String.fromCharCode(e[s]);return i}function tt(e,t){var i,s,r,n,a=t||e.length,o=new Array(2*a);for(s=0,i=0;i<a;)if((r=e[i++])<128)o[s++]=r;else if((n=Xe[r])>4)o[s++]=65533,i+=n-1;else{for(r&=2===n?31:3===n?15:7;n>1&&i<a;)r=r<<6|63&e[i++],n--;n>1?o[s++]=65533:r<65536?o[s++]=r:(r-=65536,o[s++]=55296|r>>10&1023,o[s++]=56320|1023&r)}return et(o,s)}function it(e,t){var i;for((t=t||e.length)>e.length&&(t=e.length),i=t-1;i>=0&&128==(192&e[i]);)i--;return i<0||0===i?t:i+Xe[e[i]]>t?i:t}function st(){this.input=null,this.next_in=0,this.avail_in=0,this.total_in=0,this.output=null,this.next_out=0,this.avail_out=0,this.total_out=0,this.msg="",this.state=null,this.data_type=2,this.adler=0}Xe[254]=Xe[254]=1;var rt=Object.prototype.toString;function nt(e){if(!(this instanceof nt))return new nt(e);this.options=j({level:-1,method:8,chunkSize:16384,windowBits:15,memLevel:8,strategy:0,to:""},e||{});var t=this.options;t.raw&&t.windowBits>0?t.windowBits=-t.windowBits:t.gzip&&t.windowBits>0&&t.windowBits<16&&(t.windowBits+=16),this.err=0,this.msg="",this.ended=!1,this.chunks=[],this.strm=new st,this.strm.avail_out=0;var i,s,r=function(e,t,i,s,r,n){if(!e)return je;var a=1;if(-1===t&&(t=6),s<0?(a=0,s=-s):s>15&&(a=2,s-=16),r<1||r>9||8!==i||s<8||s>15||t<0||t>9||n<0||n>4)return Ue(e,je);8===s&&(s=9);var o=new Pe;return e.state=o,o.strm=e,o.wrap=a,o.gzhead=null,o.w_bits=s,o.w_size=1<<o.w_bits,o.w_mask=o.w_size-1,o.hash_bits=r+7,o.hash_size=1<<o.hash_bits,o.hash_mask=o.hash_size-1,o.hash_shift=~~((o.hash_bits+3-1)/3),o.window=new H(2*o.w_size),o.head=new S(o.hash_size),o.prev=new S(o.w_size),o.lit_bufsize=1<<r+6,o.pending_buf_size=4*o.lit_bufsize,o.pending_buf=new H(o.pending_buf_size),o.d_buf=1*o.lit_bufsize,o.l_buf=3*o.lit_bufsize,o.level=t,o.strategy=n,o.method=i,Ye(e)}(this.strm,t.level,t.method,t.windowBits,t.memLevel,t.strategy);if(0!==r)throw new Error(Ie[r]);if(t.header&&(i=this.strm,s=t.header,i&&i.state&&(2!==i.state.wrap||(i.state.gzhead=s))),t.dictionary){var n;if(n="string"==typeof t.dictionary?Je(t.dictionary):"[object ArrayBuffer]"===rt.call(t.dictionary)?new Uint8Array(t.dictionary):t.dictionary,0!==(r=function(e,t){var i,s,r,n,a,o,_,l,h=t.length;if(!e||!e.state)return je;if(2===(n=(i=e.state).wrap)||1===n&&42!==i.status||i.lookahead)return je;for(1===n&&(e.adler=ze(e.adler,t,h,0)),i.wrap=0,h>=i.w_size&&(0===n&&(Fe(i.head),i.strstart=0,i.block_start=0,i.insert=0),l=new H(i.w_size),M(l,t,h-i.w_size,i.w_size,0),t=l,h=i.w_size),a=e.avail_in,o=e.next_in,_=e.input,e.avail_in=h,e.next_in=0,e.input=t,Ze(i);i.lookahead>=3;){s=i.strstart,r=i.lookahead-2;do{i.ins_h=(i.ins_h<<i.hash_shift^i.window[s+3-1])&i.hash_mask,i.prev[s&i.w_mask]=i.head[i.ins_h],i.head[i.ins_h]=s,s++}while(--r);i.strstart=s,i.lookahead=2,Ze(i)}return i.strstart+=i.lookahead,i.block_start=i.strstart,i.insert=i.lookahead,i.lookahead=0,i.match_length=i.prev_length=2,i.match_available=0,e.next_in=o,e.input=_,e.avail_in=a,i.wrap=n,0}(this.strm,n)))throw new Error(Ie[r]);this._dict_set=!0}}function at(e,t){var i=new nt(t);if(i.push(e,!0),i.err)throw i.msg||Ie[i.err];return i.result}nt.prototype.push=function(e,t){var i,s,r,n=this.strm,a=this.options.chunkSize;if(this.ended)return!1;s=t===~~t?t:!0===t?4:0,"string"==typeof e?n.input=Je(e):"[object ArrayBuffer]"===rt.call(e)?n.input=new Uint8Array(e):n.input=e,n.next_in=0,n.avail_in=n.input.length;do{if(0===n.avail_out&&(n.output=new H(a),n.next_out=0,n.avail_out=a),1!==(i=Ge(n,s))&&0!==i)return this.onEnd(i),this.ended=!0,!1;0!==n.avail_out&&(0!==n.avail_in||4!==s&&2!==s)||("string"===this.options.to?this.onData(et(r=N(n.output,n.next_out),r.length)):this.onData(N(n.output,n.next_out)))}while((n.avail_in>0||0===n.avail_out)&&1!==i);return 4===s?(i=function(e){var t;return e&&e.state?42!==(t=e.state.status)&&69!==t&&73!==t&&91!==t&&t!==Qe&&t!==He&&t!==Se?Ue(e,je):(e.state=null,t===He?Ue(e,-3):0):je}(this.strm),this.onEnd(i),this.ended=!0,0===i):2!==s||(this.onEnd(0),n.avail_out=0,!0)},nt.prototype.onData=function(e){this.chunks.push(e)},nt.prototype.onEnd=function(e){0===e&&("string"===this.options.to?this.result=this.chunks.join(""):this.result=F(this.chunks)),this.chunks=[],this.err=e,this.msg=this.strm.msg};var ot=Object.freeze({Deflate:nt,deflate:at,deflateRaw:function(e,t){return(t=t||{}).raw=!0,at(e,t)},gzip:function(e,t){return(t=t||{}).gzip=!0,at(e,t)}});function _t(e,t){var i,s,r,n,a,o,_,l,h,d,f,c,u,g,p,m,b,w,v,k,y,z,x,B,E;i=e.state,s=e.next_in,B=e.input,r=s+(e.avail_in-5),n=e.next_out,E=e.output,a=n-(t-e.avail_out),o=n+(e.avail_out-257),_=i.dmax,l=i.wsize,h=i.whave,d=i.wnext,f=i.window,c=i.hold,u=i.bits,g=i.lencode,p=i.distcode,m=(1<<i.lenbits)-1,b=(1<<i.distbits)-1;e:do{u<15&&(c+=B[s++]<<u,u+=8,c+=B[s++]<<u,u+=8),w=g[c&m];t:for(;;){if(c>>>=v=w>>>24,u-=v,0===(v=w>>>16&255))E[n++]=65535&w;else{if(!(16&v)){if(0==(64&v)){w=g[(65535&w)+(c&(1<<v)-1)];continue t}if(32&v){i.mode=12;break e}e.msg="invalid literal/length code",i.mode=30;break e}k=65535&w,(v&=15)&&(u<v&&(c+=B[s++]<<u,u+=8),k+=c&(1<<v)-1,c>>>=v,u-=v),u<15&&(c+=B[s++]<<u,u+=8,c+=B[s++]<<u,u+=8),w=p[c&b];i:for(;;){if(c>>>=v=w>>>24,u-=v,!(16&(v=w>>>16&255))){if(0==(64&v)){w=p[(65535&w)+(c&(1<<v)-1)];continue i}e.msg="invalid distance code",i.mode=30;break e}if(y=65535&w,u<(v&=15)&&(c+=B[s++]<<u,(u+=8)<v&&(c+=B[s++]<<u,u+=8)),(y+=c&(1<<v)-1)>_){e.msg="invalid distance too far back",i.mode=30;break e}if(c>>>=v,u-=v,y>(v=n-a)){if((v=y-v)>h&&i.sane){e.msg="invalid distance too far back",i.mode=30;break e}if(z=0,x=f,0===d){if(z+=l-v,v<k){k-=v;do{E[n++]=f[z++]}while(--v);z=n-y,x=E}}else if(d<v){if(z+=l+d-v,(v-=d)<k){k-=v;do{E[n++]=f[z++]}while(--v);if(z=0,d<k){k-=v=d;do{E[n++]=f[z++]}while(--v);z=n-y,x=E}}}else if(z+=d-v,v<k){k-=v;do{E[n++]=f[z++]}while(--v);z=n-y,x=E}for(;k>2;)E[n++]=x[z++],E[n++]=x[z++],E[n++]=x[z++],k-=3;k&&(E[n++]=x[z++],k>1&&(E[n++]=x[z++]))}else{z=n-y;do{E[n++]=E[z++],E[n++]=E[z++],E[n++]=E[z++],k-=3}while(k>2);k&&(E[n++]=E[z++],k>1&&(E[n++]=E[z++]))}break}}break}}while(s<r&&n<o);s-=k=u>>3,c&=(1<<(u-=k<<3))-1,e.next_in=s,e.next_out=n,e.avail_in=s<r?r-s+5:5-(s-r),e.avail_out=n<o?o-n+257:257-(n-o),i.hold=c,i.bits=u}var lt=15,ht=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258,0,0],dt=[16,16,16,16,16,16,16,16,17,17,17,17,18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,16,72,78],ft=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577,0,0],ct=[16,16,16,16,17,17,18,18,19,19,20,20,21,21,22,22,23,23,24,24,25,25,26,26,27,27,28,28,29,29,64,64];function ut(e,t,i,s,r,n,a,o){var _,l,h,d,f,c,u,g,p,m=o.bits,b=0,w=0,v=0,k=0,y=0,z=0,x=0,B=0,E=0,I=0,j=null,N=0,A=new S(16),Q=new S(16),H=null,U=0;for(b=0;b<=lt;b++)A[b]=0;for(w=0;w<s;w++)A[t[i+w]]++;for(y=m,k=lt;k>=1&&0===A[k];k--);if(y>k&&(y=k),0===k)return r[n++]=20971520,r[n++]=20971520,o.bits=1,0;for(v=1;v<k&&0===A[v];v++);for(y<v&&(y=v),B=1,b=1;b<=lt;b++)if(B<<=1,(B-=A[b])<0)return-1;if(B>0&&(0===e||1!==k))return-1;for(Q[1]=0,b=1;b<lt;b++)Q[b+1]=Q[b]+A[b];for(w=0;w<s;w++)0!==t[i+w]&&(a[Q[t[i+w]]++]=w);if(0===e?(j=H=a,c=19):1===e?(j=ht,N-=257,H=dt,U-=257,c=256):(j=ft,H=ct,c=-1),I=0,w=0,b=v,f=n,z=y,x=0,h=-1,d=(E=1<<y)-1,1===e&&E>852||2===e&&E>592)return 1;for(;;){u=b-x,a[w]<c?(g=0,p=a[w]):a[w]>c?(g=H[U+a[w]],p=j[N+a[w]]):(g=96,p=0),_=1<<b-x,v=l=1<<z;do{r[f+(I>>x)+(l-=_)]=u<<24|g<<16|p|0}while(0!==l);for(_=1<<b-1;I&_;)_>>=1;if(0!==_?(I&=_-1,I+=_):I=0,w++,0==--A[b]){if(b===k)break;b=t[i+a[w]]}if(b>y&&(I&d)!==h){for(0===x&&(x=y),f+=v,B=1<<(z=b-x);z+x<k&&!((B-=A[z+x])<=0);)z++,B<<=1;if(E+=1<<z,1===e&&E>852||2===e&&E>592)return 1;r[h=I&d]=y<<24|z<<16|f-n|0}}return 0!==I&&(r[f+I]=b-x<<24|64<<16|0),o.bits=y,0}var gt=-2,pt=12,mt=30;function bt(e){return(e>>>24&255)+(e>>>8&65280)+((65280&e)<<8)+((255&e)<<24)}function wt(){this.mode=0,this.last=!1,this.wrap=0,this.havedict=!1,this.flags=0,this.dmax=0,this.check=0,this.total=0,this.head=null,this.wbits=0,this.wsize=0,this.whave=0,this.wnext=0,this.window=null,this.hold=0,this.bits=0,this.length=0,this.offset=0,this.extra=0,this.lencode=null,this.distcode=null,this.lenbits=0,this.distbits=0,this.ncode=0,this.nlen=0,this.ndist=0,this.have=0,this.next=null,this.lens=new S(320),this.work=new S(288),this.lendyn=null,this.distdyn=null,this.sane=0,this.back=0,this.was=0}function vt(e){var t;return e&&e.state?((t=e.state).wsize=0,t.whave=0,t.wnext=0,function(e){var t;return e&&e.state?(t=e.state,e.total_in=e.total_out=t.total=0,e.msg="",t.wrap&&(e.adler=1&t.wrap),t.mode=1,t.last=0,t.havedict=0,t.dmax=32768,t.head=null,t.hold=0,t.bits=0,t.lencode=t.lendyn=new U(852),t.distcode=t.distdyn=new U(592),t.sane=1,t.back=-1,0):gt}(e)):gt}function kt(e,t){var i,s;return e?(s=new wt,e.state=s,s.window=null,0!==(i=function(e,t){var i,s;return e&&e.state?(s=e.state,t<0?(i=0,t=-t):(i=1+(t>>4),t<48&&(t&=15)),t&&(t<8||t>15)?gt:(null!==s.window&&s.wbits!==t&&(s.window=null),s.wrap=i,s.wbits=t,vt(e))):gt}(e,t))&&(e.state=null),i):gt}var yt,zt,xt=!0;function Bt(e){if(xt){var t;for(yt=new U(512),zt=new U(32),t=0;t<144;)e.lens[t++]=8;for(;t<256;)e.lens[t++]=9;for(;t<280;)e.lens[t++]=7;for(;t<288;)e.lens[t++]=8;for(ut(1,e.lens,0,288,yt,0,e.work,{bits:9}),t=0;t<32;)e.lens[t++]=5;ut(2,e.lens,0,32,zt,0,e.work,{bits:5}),xt=!1}e.lencode=yt,e.lenbits=9,e.distcode=zt,e.distbits=5}function Et(e,t,i,s){var r,n=e.state;return null===n.window&&(n.wsize=1<<n.wbits,n.wnext=0,n.whave=0,n.window=new H(n.wsize)),s>=n.wsize?(M(n.window,t,i-n.wsize,n.wsize,0),n.wnext=0,n.whave=n.wsize):((r=n.wsize-n.wnext)>s&&(r=s),M(n.window,t,i-s,r,n.wnext),(s-=r)?(M(n.window,t,i-s,s,0),n.wnext=s,n.whave=n.wsize):(n.wnext+=r,n.wnext===n.wsize&&(n.wnext=0),n.whave<n.wsize&&(n.whave+=r))),0}function It(e,t){var i,s,r,n,a,o,_,l,h,d,f,c,u,g,p,m,b,w,v,k,y,z,x,B,E=0,I=new H(4),j=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];if(!e||!e.state||!e.output||!e.input&&0!==e.avail_in)return gt;(i=e.state).mode===pt&&(i.mode=13),a=e.next_out,r=e.output,_=e.avail_out,n=e.next_in,s=e.input,o=e.avail_in,l=i.hold,h=i.bits,d=o,f=_,z=0;e:for(;;)switch(i.mode){case 1:if(0===i.wrap){i.mode=13;break}for(;h<16;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(2&i.wrap&&35615===l){i.check=0,I[0]=255&l,I[1]=l>>>8&255,i.check=Be(i.check,I,2,0),l=0,h=0,i.mode=2;break}if(i.flags=0,i.head&&(i.head.done=!1),!(1&i.wrap)||(((255&l)<<8)+(l>>8))%31){e.msg="incorrect header check",i.mode=mt;break}if(8!=(15&l)){e.msg="unknown compression method",i.mode=mt;break}if(h-=4,y=8+(15&(l>>>=4)),0===i.wbits)i.wbits=y;else if(y>i.wbits){e.msg="invalid window size",i.mode=mt;break}i.dmax=1<<y,e.adler=i.check=1,i.mode=512&l?10:pt,l=0,h=0;break;case 2:for(;h<16;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(i.flags=l,8!=(255&i.flags)){e.msg="unknown compression method",i.mode=mt;break}if(57344&i.flags){e.msg="unknown header flags set",i.mode=mt;break}i.head&&(i.head.text=l>>8&1),512&i.flags&&(I[0]=255&l,I[1]=l>>>8&255,i.check=Be(i.check,I,2,0)),l=0,h=0,i.mode=3;case 3:for(;h<32;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.head&&(i.head.time=l),512&i.flags&&(I[0]=255&l,I[1]=l>>>8&255,I[2]=l>>>16&255,I[3]=l>>>24&255,i.check=Be(i.check,I,4,0)),l=0,h=0,i.mode=4;case 4:for(;h<16;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.head&&(i.head.xflags=255&l,i.head.os=l>>8),512&i.flags&&(I[0]=255&l,I[1]=l>>>8&255,i.check=Be(i.check,I,2,0)),l=0,h=0,i.mode=5;case 5:if(1024&i.flags){for(;h<16;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.length=l,i.head&&(i.head.extra_len=l),512&i.flags&&(I[0]=255&l,I[1]=l>>>8&255,i.check=Be(i.check,I,2,0)),l=0,h=0}else i.head&&(i.head.extra=null);i.mode=6;case 6:if(1024&i.flags&&((c=i.length)>o&&(c=o),c&&(i.head&&(y=i.head.extra_len-i.length,i.head.extra||(i.head.extra=new Array(i.head.extra_len)),M(i.head.extra,s,n,c,y)),512&i.flags&&(i.check=Be(i.check,s,c,n)),o-=c,n+=c,i.length-=c),i.length))break e;i.length=0,i.mode=7;case 7:if(2048&i.flags){if(0===o)break e;c=0;do{y=s[n+c++],i.head&&y&&i.length<65536&&(i.head.name+=String.fromCharCode(y))}while(y&&c<o);if(512&i.flags&&(i.check=Be(i.check,s,c,n)),o-=c,n+=c,y)break e}else i.head&&(i.head.name=null);i.length=0,i.mode=8;case 8:if(4096&i.flags){if(0===o)break e;c=0;do{y=s[n+c++],i.head&&y&&i.length<65536&&(i.head.comment+=String.fromCharCode(y))}while(y&&c<o);if(512&i.flags&&(i.check=Be(i.check,s,c,n)),o-=c,n+=c,y)break e}else i.head&&(i.head.comment=null);i.mode=9;case 9:if(512&i.flags){for(;h<16;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(l!==(65535&i.check)){e.msg="header crc mismatch",i.mode=mt;break}l=0,h=0}i.head&&(i.head.hcrc=i.flags>>9&1,i.head.done=!0),e.adler=i.check=0,i.mode=pt;break;case 10:for(;h<32;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}e.adler=i.check=bt(l),l=0,h=0,i.mode=11;case 11:if(0===i.havedict)return e.next_out=a,e.avail_out=_,e.next_in=n,e.avail_in=o,i.hold=l,i.bits=h,2;e.adler=i.check=1,i.mode=pt;case pt:if(5===t||6===t)break e;case 13:if(i.last){l>>>=7&h,h-=7&h,i.mode=27;break}for(;h<3;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}switch(i.last=1&l,h-=1,3&(l>>>=1)){case 0:i.mode=14;break;case 1:if(Bt(i),i.mode=20,6===t){l>>>=2,h-=2;break e}break;case 2:i.mode=17;break;case 3:e.msg="invalid block type",i.mode=mt}l>>>=2,h-=2;break;case 14:for(l>>>=7&h,h-=7&h;h<32;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if((65535&l)!=(l>>>16^65535)){e.msg="invalid stored block lengths",i.mode=mt;break}if(i.length=65535&l,l=0,h=0,i.mode=15,6===t)break e;case 15:i.mode=16;case 16:if(c=i.length){if(c>o&&(c=o),c>_&&(c=_),0===c)break e;M(r,s,n,c,a),o-=c,n+=c,_-=c,a+=c,i.length-=c;break}i.mode=pt;break;case 17:for(;h<14;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(i.nlen=257+(31&l),l>>>=5,h-=5,i.ndist=1+(31&l),l>>>=5,h-=5,i.ncode=4+(15&l),l>>>=4,h-=4,i.nlen>286||i.ndist>30){e.msg="too many length or distance symbols",i.mode=mt;break}i.have=0,i.mode=18;case 18:for(;i.have<i.ncode;){for(;h<3;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.lens[j[i.have++]]=7&l,l>>>=3,h-=3}for(;i.have<19;)i.lens[j[i.have++]]=0;if(i.lencode=i.lendyn,i.lenbits=7,x={bits:i.lenbits},z=ut(0,i.lens,0,19,i.lencode,0,i.work,x),i.lenbits=x.bits,z){e.msg="invalid code lengths set",i.mode=mt;break}i.have=0,i.mode=19;case 19:for(;i.have<i.nlen+i.ndist;){for(;m=(E=i.lencode[l&(1<<i.lenbits)-1])>>>16&255,b=65535&E,!((p=E>>>24)<=h);){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(b<16)l>>>=p,h-=p,i.lens[i.have++]=b;else{if(16===b){for(B=p+2;h<B;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(l>>>=p,h-=p,0===i.have){e.msg="invalid bit length repeat",i.mode=mt;break}y=i.lens[i.have-1],c=3+(3&l),l>>>=2,h-=2}else if(17===b){for(B=p+3;h<B;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}h-=p,y=0,c=3+(7&(l>>>=p)),l>>>=3,h-=3}else{for(B=p+7;h<B;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}h-=p,y=0,c=11+(127&(l>>>=p)),l>>>=7,h-=7}if(i.have+c>i.nlen+i.ndist){e.msg="invalid bit length repeat",i.mode=mt;break}for(;c--;)i.lens[i.have++]=y}}if(i.mode===mt)break;if(0===i.lens[256]){e.msg="invalid code -- missing end-of-block",i.mode=mt;break}if(i.lenbits=9,x={bits:i.lenbits},z=ut(1,i.lens,0,i.nlen,i.lencode,0,i.work,x),i.lenbits=x.bits,z){e.msg="invalid literal/lengths set",i.mode=mt;break}if(i.distbits=6,i.distcode=i.distdyn,x={bits:i.distbits},z=ut(2,i.lens,i.nlen,i.ndist,i.distcode,0,i.work,x),i.distbits=x.bits,z){e.msg="invalid distances set",i.mode=mt;break}if(i.mode=20,6===t)break e;case 20:i.mode=21;case 21:if(o>=6&&_>=258){e.next_out=a,e.avail_out=_,e.next_in=n,e.avail_in=o,i.hold=l,i.bits=h,_t(e,f),a=e.next_out,r=e.output,_=e.avail_out,n=e.next_in,s=e.input,o=e.avail_in,l=i.hold,h=i.bits,i.mode===pt&&(i.back=-1);break}for(i.back=0;m=(E=i.lencode[l&(1<<i.lenbits)-1])>>>16&255,b=65535&E,!((p=E>>>24)<=h);){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(m&&0==(240&m)){for(w=p,v=m,k=b;m=(E=i.lencode[k+((l&(1<<w+v)-1)>>w)])>>>16&255,b=65535&E,!(w+(p=E>>>24)<=h);){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}l>>>=w,h-=w,i.back+=w}if(l>>>=p,h-=p,i.back+=p,i.length=b,0===m){i.mode=26;break}if(32&m){i.back=-1,i.mode=pt;break}if(64&m){e.msg="invalid literal/length code",i.mode=mt;break}i.extra=15&m,i.mode=22;case 22:if(i.extra){for(B=i.extra;h<B;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.length+=l&(1<<i.extra)-1,l>>>=i.extra,h-=i.extra,i.back+=i.extra}i.was=i.length,i.mode=23;case 23:for(;m=(E=i.distcode[l&(1<<i.distbits)-1])>>>16&255,b=65535&E,!((p=E>>>24)<=h);){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(0==(240&m)){for(w=p,v=m,k=b;m=(E=i.distcode[k+((l&(1<<w+v)-1)>>w)])>>>16&255,b=65535&E,!(w+(p=E>>>24)<=h);){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}l>>>=w,h-=w,i.back+=w}if(l>>>=p,h-=p,i.back+=p,64&m){e.msg="invalid distance code",i.mode=mt;break}i.offset=b,i.extra=15&m,i.mode=24;case 24:if(i.extra){for(B=i.extra;h<B;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}i.offset+=l&(1<<i.extra)-1,l>>>=i.extra,h-=i.extra,i.back+=i.extra}if(i.offset>i.dmax){e.msg="invalid distance too far back",i.mode=mt;break}i.mode=25;case 25:if(0===_)break e;if(c=f-_,i.offset>c){if((c=i.offset-c)>i.whave&&i.sane){e.msg="invalid distance too far back",i.mode=mt;break}c>i.wnext?(c-=i.wnext,u=i.wsize-c):u=i.wnext-c,c>i.length&&(c=i.length),g=i.window}else g=r,u=a-i.offset,c=i.length;c>_&&(c=_),_-=c,i.length-=c;do{r[a++]=g[u++]}while(--c);0===i.length&&(i.mode=21);break;case 26:if(0===_)break e;r[a++]=i.length,_--,i.mode=21;break;case 27:if(i.wrap){for(;h<32;){if(0===o)break e;o--,l|=s[n++]<<h,h+=8}if(f-=_,e.total_out+=f,i.total+=f,f&&(e.adler=i.check=i.flags?Be(i.check,r,f,a-f):ze(i.check,r,f,a-f)),f=_,(i.flags?l:bt(l))!==i.check){e.msg="incorrect data check",i.mode=mt;break}l=0,h=0}i.mode=28;case 28:if(i.wrap&&i.flags){for(;h<32;){if(0===o)break e;o--,l+=s[n++]<<h,h+=8}if(l!==(4294967295&i.total)){e.msg="incorrect length check",i.mode=mt;break}l=0,h=0}i.mode=29;case 29:z=1;break e;case mt:z=-3;break e;case 31:return-4;case 32:default:return gt}return e.next_out=a,e.avail_out=_,e.next_in=n,e.avail_in=o,i.hold=l,i.bits=h,(i.wsize||f!==e.avail_out&&i.mode<mt&&(i.mode<27||4!==t))&&Et(e,e.output,e.next_out,f-e.avail_out),d-=e.avail_in,f-=e.avail_out,e.total_in+=d,e.total_out+=f,i.total+=f,i.wrap&&f&&(e.adler=i.check=i.flags?Be(i.check,r,f,e.next_out-f):ze(i.check,r,f,e.next_out-f)),e.data_type=i.bits+(i.last?64:0)+(i.mode===pt?128:0)+(20===i.mode||15===i.mode?256:0),(0===d&&0===f||4===t)&&0===z&&(z=-5),z}function jt(e,t){var i,s=t.length;return e&&e.state?0!==(i=e.state).wrap&&11!==i.mode?gt:11===i.mode&&ze(1,t,s,0)!==i.check?-3:Et(e,t,s,s)?(i.mode=31,-4):(i.havedict=1,0):gt}var Nt={Z_NO_FLUSH:0,Z_PARTIAL_FLUSH:1,Z_SYNC_FLUSH:2,Z_FULL_FLUSH:3,Z_FINISH:4,Z_BLOCK:5,Z_TREES:6,Z_OK:0,Z_STREAM_END:1,Z_NEED_DICT:2,Z_ERRNO:-1,Z_STREAM_ERROR:-2,Z_DATA_ERROR:-3,Z_BUF_ERROR:-5,Z_NO_COMPRESSION:0,Z_BEST_SPEED:1,Z_BEST_COMPRESSION:9,Z_DEFAULT_COMPRESSION:-1,Z_FILTERED:1,Z_HUFFMAN_ONLY:2,Z_RLE:3,Z_FIXED:4,Z_DEFAULT_STRATEGY:0,Z_BINARY:0,Z_TEXT:1,Z_UNKNOWN:2,Z_DEFLATED:8};function At(){this.text=0,this.time=0,this.xflags=0,this.os=0,this.extra=null,this.extra_len=0,this.name="",this.comment="",this.hcrc=0,this.done=!1}var Qt=Object.prototype.toString;function Ht(e){if(!(this instanceof Ht))return new Ht(e);this.options=j({chunkSize:16384,windowBits:0,to:""},e||{});var t=this.options;t.raw&&t.windowBits>=0&&t.windowBits<16&&(t.windowBits=-t.windowBits,0===t.windowBits&&(t.windowBits=-15)),!(t.windowBits>=0&&t.windowBits<16)||e&&e.windowBits||(t.windowBits+=32),t.windowBits>15&&t.windowBits<48&&0==(15&t.windowBits)&&(t.windowBits|=15),this.err=0,this.msg="",this.ended=!1,this.chunks=[],this.strm=new st,this.strm.avail_out=0;var i,s,r,n=kt(this.strm,t.windowBits);if(n!==Nt.Z_OK)throw new Error(Ie[n]);this.header=new At,i=this.strm,s=this.header,i&&i.state&&(0==(2&(r=i.state).wrap)||(r.head=s,s.done=!1))}function St(e,t){var i=new Ht(t);if(i.push(e,!0),i.err)throw i.msg||Ie[i.err];return i.result}Ht.prototype.push=function(e,t){var i,s,r,n,a,o,_=this.strm,l=this.options.chunkSize,h=this.options.dictionary,d=!1;if(this.ended)return!1;s=t===~~t?t:!0===t?Nt.Z_FINISH:Nt.Z_NO_FLUSH,"string"==typeof e?_.input=function(e){for(var t=new H(e.length),i=0,s=t.length;i<s;i++)t[i]=e.charCodeAt(i);return t}(e):"[object ArrayBuffer]"===Qt.call(e)?_.input=new Uint8Array(e):_.input=e,_.next_in=0,_.avail_in=_.input.length;do{if(0===_.avail_out&&(_.output=new H(l),_.next_out=0,_.avail_out=l),(i=It(_,Nt.Z_NO_FLUSH))===Nt.Z_NEED_DICT&&h&&(o="string"==typeof h?Je(h):"[object ArrayBuffer]"===Qt.call(h)?new Uint8Array(h):h,i=jt(this.strm,o)),i===Nt.Z_BUF_ERROR&&!0===d&&(i=Nt.Z_OK,d=!1),i!==Nt.Z_STREAM_END&&i!==Nt.Z_OK)return this.onEnd(i),this.ended=!0,!1;_.next_out&&(0!==_.avail_out&&i!==Nt.Z_STREAM_END&&(0!==_.avail_in||s!==Nt.Z_FINISH&&s!==Nt.Z_SYNC_FLUSH)||("string"===this.options.to?(r=it(_.output,_.next_out),n=_.next_out-r,a=tt(_.output,r),_.next_out=n,_.avail_out=l-n,n&&M(_.output,_.output,r,n,0),this.onData(a)):this.onData(N(_.output,_.next_out)))),0===_.avail_in&&0===_.avail_out&&(d=!0)}while((_.avail_in>0||0===_.avail_out)&&i!==Nt.Z_STREAM_END);return i===Nt.Z_STREAM_END&&(s=Nt.Z_FINISH),s===Nt.Z_FINISH?(i=function(e){if(!e||!e.state)return gt;var t=e.state;return t.window&&(t.window=null),e.state=null,0}(this.strm),this.onEnd(i),this.ended=!0,i===Nt.Z_OK):s!==Nt.Z_SYNC_FLUSH||(this.onEnd(Nt.Z_OK),_.avail_out=0,!0)},Ht.prototype.onData=function(e){this.chunks.push(e)},Ht.prototype.onEnd=function(e){e===Nt.Z_OK&&("string"===this.options.to?this.result=this.chunks.join(""):this.result=F(this.chunks)),this.chunks=[],this.err=e,this.msg=this.strm.msg};const Ut={};function Mt(e,t,i){return t in e?Object.defineProperty(e,t,{value:i,enumerable:!0,configurable:!0,writable:!0}):e[t]=i,e}j(Ut,ot,Object.freeze({Inflate:Ht,inflate:St,inflateRaw:function(e,t){return(t=t||{}).raw=!0,St(e,t)},ungzip:St}),Nt);const Ft=function(e){let t=new Uint8Array(e);return Ut.inflate(t).buffer};class Rt{constructor(e,t){this.fh=e,this.offset=t,this.depth=null}init(){this.all_nodes=new Map,this._read_root_node(),this._read_children()}_read_children(){let e=this.depth;for(;e>0;){for(var t of this.all_nodes.get(e))for(var i of t.get("addresses"))this._add_node(this._read_node(i,e-1));e--}}_read_root_node(){let e=this._read_node(this.offset,null);this._add_node(e),this.depth=e.get("node_level")}_add_node(e){let t=e.get("node_level");this.all_nodes.has(t)?this.all_nodes.get(t).push(e):this.all_nodes.set(t,[e])}_read_node(e,t){return node=this._read_node_header(e,t),node.set("keys",[]),node.set("addresses",[]),node}_read_node_header(e){throw"NotImplementedError: must define _read_node_header in implementation class"}}class Ot extends Rt{constructor(...e){super(...e),Mt(this,"B_LINK_NODE",new Map([["signature","4s"],["node_type","B"],["node_level","B"],["entries_used","H"],["left_sibling","Q"],["right_sibling","Q"]]))}_read_node_header(e,t){let s=i(this.B_LINK_NODE,this.fh,e);if(null!=t&&s.get("node_level")!=t)throw"node level does not match";return s}}class Dt extends Ot{constructor(e,t){super(e,t),Mt(this,"NODE_TYPE",0),this.init()}_read_node(e,t){let i=this._read_node_header(e,t);e+=r(this.B_LINK_NODE);let s=[],n=[],a=i.get("entries_used");for(var o=0;o<a;o++){let t=_.unpack_from("<Q",this.fh,e)[0];e+=8;let i=_.unpack_from("<Q",this.fh,e)[0];e+=8,s.push(t),n.push(i)}return s.push(_.unpack_from("<Q",this.fh,e)[0]),i.set("keys",s),i.set("addresses",n),i}symbol_table_addresses(){var e=[],t=this.all_nodes.get(0);for(var i of t)e=e.concat(i.get("addresses"));return e}}class Ct extends Ot{constructor(e,t,i){super(e,t),Mt(this,"NODE_TYPE",1),this.dims=i,this.init()}_read_node(e,t){let i=this._read_node_header(e,t);e+=r(this.B_LINK_NODE);var s=[],n=[];let a=i.get("entries_used");for(var o=0;o<a;o++){let[t,i]=_.unpack_from("<II",this.fh,e);e+=8;let r="<"+this.dims.toFixed()+"Q",a=_.calcsize(r),o=_.unpack_from(r,this.fh,e);e+=a;let l=_.unpack_from("<Q",this.fh,e)[0];e+=8,s.push(new Map([["chunk_size",t],["filter_mask",i],["chunk_offset",o]])),n.push(l)}return i.set("keys",s),i.set("addresses",n),i}construct_data_from_chunks(e,t,i,s){var r,n,a;if(i instanceof Array){i;let e=i[0];if("REFERENCE"==e){if(8!=i[1])throw"NotImplementedError('Unsupported Reference type')";i="<u8";r="getUint64",n=!1,a=8}else{if("VLEN_STRING"!=e&&"VLEN_SEQUENCE"!=e)throw"NotImplementedError('datatype not implemented')";r="getVLENStruct",n=!1,a=16}}else null,[r,n,a]=o(i);var _=t.reduce((function(e,t){return e*t}),1),h=e.reduce((function(e,t){return e*t}),1);let d=t.length;var f=1,c=(e.slice().map((function(e){let t=f;return f*=e,t})),f=1,t.slice().reverse().map((function(e){let t=f;return f*=e,t})).reverse()),u=new Array(_);let g=h*a;for(var p of this.all_nodes.get(0)){let i=p.get("keys"),o=p.get("addresses"),_=i.length;for(var m=0;m<_;m++){let _=i[m],f=o[m];var b;if(null==s)b=this.fh.slice(f,f+g);else{b=this.fh.slice(f,f+_.get("chunk_size"));let e=_.get("filter_mask");b=this._filter_chunk(b,e,s,a)}for(var w=_.get("chunk_offset").slice(),v=w.slice(),k=v.map((function(){return 0})),y=new l(b),z=0;z<h;z++){for(var x=d-1;x>=0&&k[x]>=e[x];x--)k[x]=0,v[x]=w[x],x>0&&(k[x-1]+=1,v[x-1]+=1);if(v.slice(0,-1).every((function(e,i){return e<t[i]}))){let e=z*a,t=y[r](e,!n,a);u[v.slice(0,-1).reduce((function(e,t,i){return t*c[i]+e}),0)]=t}k[d-1]+=1,v[d-1]+=1}}}return u}_filter_chunk(e,t,i,s){let r=i.length;for(var n=e.slice(),a=r-1;a>=0;a--){if(t&1<<a)continue;let e=i[a].get("filter_id");if(e==Vt)n=Ft(n);else if(e==Pt){let e=n.byteLength;var o=new Uint8Array(e);let t=Math.floor(e/s),i=new DataView(n);for(var _=0;_<s;_++)for(var l=0;l<t;l++)o[_+l*s]=i.getUint8(_*t+l);n=o.buffer}else{if(e!=Yt)throw'NotImplementedError("Filter with id:'+e.toFixed()+' not supported")';Kt(n),n=n.slice(0,-4)}}return n}}class Lt extends Rt{constructor(e,t){super(e,t),Mt(this,"B_TREE_HEADER",new Map([["signature","4s"],["version","B"],["node_type","B"],["node_size","I"],["record_size","H"],["depth","H"],["split_percent","B"],["merge_percent","B"],["root_address","Q"],["root_nrecords","H"],["total_nrecords","Q"]])),Mt(this,"B_LINK_NODE",new Map([["signature","4s"],["version","B"],["node_type","B"]])),this.init()}_read_root_node(){let e=this._read_tree_header(this.offset);this.address_formats=this._calculate_address_formats(e),this.header=e,this.depth=e.get("depth");let t=[e.get("root_address"),e.get("root_nrecords"),e.get("total_nrecords")],i=this._read_node(t,this.depth);this._add_node(i)}_read_tree_header(e){return i(this.B_TREE_HEADER,this.fh,this.offset)}_calculate_address_formats(e){let t=e.get("node_size"),i=e.get("record_size"),s=0,r=0,n=new Map,a=e.get("depth");for(var o=0;o<=a;o++){let e,_,l,h="",d="",f="";if(0==o?(e=0,_=0,l=0):1==o?(e=8,h="<Q",_=this._required_bytes(s),d=this._int_format(_),l=0):(e=8,h="<Q",_=this._required_bytes(s),d=this._int_format(_),l=this._required_bytes(r),f=this._int_format(l)),n.set(o,[e,_,l,h,d,f]),o<a){let n=e+_+l;s=this._nrecords_max(t,i,n),r>0?r*=s:r=s}}return n}_nrecords_max(e,t,i){return Math.floor((e-10-i)/(t+i))}_required_bytes(e){return Math.ceil(h(e)/8)}_int_format(e){return["<B","<H","<I","<Q"][e-1]}_read_node(e,t){let[i,s,n]=e,a=this._read_node_header(i,t);i+=r(this.B_LINK_NODE);let o=this.header.get("record_size"),l=[];for(let e=0;e<s;e++){let e=this._parse_record(this.fh,i,o);i+=o,l.push(e)}let h=[],d=this.address_formats.get(t);if(0!=t){let[e,t,r,n,a,o]=d;for(let l=0;l<=s;l++){let s=_.unpack_from(n,this.fh,i)[0];i+=e;let l=_.unpack_from(a,this.fh,i)[0];i+=t;let d=l;r>0&&(d=_.unpack_from(o,this.fh,i)[0]),h.push([s,l,d])}}return a.set("keys",l),a.set("addresses",h),a}_read_node_header(e,t){let s=i(this.B_LINK_NODE,this.fh,e);return s.set("node_level",t),s}*iter_records(){for(let e of this.all_nodes.values())for(let t of e)for(let e of t.get("keys"))yield e}_parse_record(e){throw"NotImplementedError"}}class Zt extends Lt{constructor(...e){super(...e),Mt(this,"NODE_TYPE",5)}_parse_record(e,t,i){let s=_.unpack_from("<I",e,t)[0];return t+=4,new Map([["namehash",s],["heapid",e.slice(t,t+7)]])}}class Tt extends Lt{constructor(...e){super(...e),Mt(this,"NODE_TYPE",6)}_parse_record(e,t,i){let s=_.unpack_from("<Q",e,t)[0];return t+=8,new Map([["creationorder",s],["heapid",e.slice(t,t+7)]])}}function Kt(e){for(var t=e.byteLength%2!=0,i=e.byteLength-4,s=new l(e),r=0,n=0,a=0;a<i-1;a+=2){n=(n+(r=(r+s.getUint16(a,!0))%65535))%65535}if(t){n=(n+(r=(r+s.getUint8(i-1))%65535))%65535}var[o,h]=_.unpack_from(">HH",e,i);if(h%=65535,r!=(o%=65535)||n!=h)throw'ValueError("fletcher32 checksum invalid")';return!0}const Vt=1,Pt=2,Yt=3;class Gt{constructor(e,t){let s=_.unpack_from("<B",e,t+8);var r;if(0==s)r=i(ti,e,t),this._end_of_sblock=t+ii;else{if(2!=s&&3!=s)throw"unsupported superblock version: "+s.toFixed();r=i(si,e,t),this._end_of_sblock=t+ri}if(r.get("format_signature")!=Jt)throw"Incorrect file signature: "+r.get("format_signature");if(8!=r.get("offset_size")||8!=r.get("length_size"))throw"File uses non-64-bit addressing";this.version=r.get("superblock_version"),this._contents=r,this._root_symbol_table=null,this._fh=e}get offset_to_dataobjects(){if(0==this.version){var e=new qt(this._fh,this._end_of_sblock,!0);return this._root_symbol_table=e,e.group_offset}if(2==this.version||3==this.version)return this._contents.get("root_group_address");throw"Not implemented version = "+this.version.toFixed()}}class $t{constructor(e,t){let r=i(li,e,t);s("HEAP"==r.get("signature")),s(0==r.get("version"));let n=r.get("address_of_data_segment"),a=e.slice(n,n+r.get("data_segment_size"));r.set("heap_data",a),this._contents=r,this.data=a}get_object_name(e){let t=new Uint8Array(this.data).indexOf(0,e)-e;return _.unpack_from("<"+t.toFixed()+"s",this.data,e)[0]}}class qt{constructor(e,t,s=!1){var r;if(s)r=new Map([["symbols",1]]);else{if("SNOD"!=(r=i(oi,e,t)).get("signature"))throw"incorrect node type";t+=_i}for(var n=[],a=r.get("symbols"),o=0;o<a;o++)n.push(i(ni,e,t)),t+=ai;s&&(this.group_offset=n[0].get("object_header_address")),this.entries=n,this._contents=r}assign_name(e){this.entries.forEach((function(t){let i=t.get("link_name_offset"),s=e.get_object_name(i);t.set("link_name",s)}))}get_links(e){var t={};return this.entries.forEach((function(i){let s=i.get("cache_type"),r=i.get("link_name");if(0==s||1==s)t[r]=i.get("object_header_address");else if(2==s){let s=i.get("scratch"),a=new ArrayBuffer(4),o=new Uint8Array(a);for(var n=0;n<4;n++)o[n]=s.charCodeAt(n);let l=_.unpack_from("<I",a,0)[0];t[r]=e.get_object_name(l)}})),t}}class Xt{constructor(e,t){let s=i(hi,e,t);t+=di;let r=s.get("collection_size")-di,n=e.slice(t,t+r);this.heap_data=n,this._header=s,this._objects=null}get objects(){if(null==this._objects){this._objects=new Map;for(var e=0;e<=this.heap_data.byteLength-ci;){let t=i(fi,this.heap_data,e);if(0==t.get("object_index"))break;e+=ci;let s=this.heap_data.slice(e,e+t.get("object_size"));this._objects.set(t.get("object_index"),s),e+=n(t.get("object_size"))}}return this._objects}}class Wt{constructor(e,t){this.fh=e;let n=i(ui,e,t);if(t+=r(ui),s("FRHP"==n.get("signature")),s(0==n.get("version")),n.get("filter_info_size")>0)throw"Filter info size not supported on FractalHeap";if(n.get("btree_address_huge_objects")!=ei)throw"Huge objects not implemented in FractalHeap";n.set("btree_address_huge_objects",null),n.get("root_block_address")==ei&&n.set("root_block_address",null);let a=n.get("log2_maximum_heap_size"),o=this._min_size_nbits(a),_=new Map([["signature","4s"],["version","B"],["heap_header_adddress","Q"],["block_offset",`${o}B`]]);this.indirect_block_header=new Map(_),this.indirect_block_header_size=r(_),2==(2&n.get("flags"))&&_.set("checksum","I"),this.direct_block_header=_,this.direct_block_header_size=r(_);let l=n.get("maximum_direct_block_size");this._managed_object_offset_size=this._min_size_nbits(a);let h=Math.min(l,n.get("max_managed_object_size"));this._managed_object_length_size=this._min_size_integer(h);let d=n.get("starting_block_size"),f=n.get("table_width");if(!(d>0))throw"Starting block size == 0 not implemented";let c=Number(Math.floor(Math.log2(l)));s(1n<<BigInt(c)==l);let u=Number(Math.floor(Math.log2(d)));s(1n<<BigInt(u)==d),this._max_direct_nrows=c-u+2;let g=Math.floor(Math.log2(f));s(1<<g==f),this._indirect_nrows_sub=g+u-1,this.header=n,this.nobjects=n.get("managed_object_count")+n.get("huge_object_count")+n.get("tiny_object_count");let p=[],m=n.get("root_block_address"),b=0;if(null!=m&&(b=n.get("indirect_current_rows_count")),b>0)for(let t of this._iter_indirect_block(e,m,b))p.push(t);else{let t=this._read_direct_block(e,m,d);p.push(t)}let w=p.reduce(((e,t)=>e+t.byteLength),0),v=new Uint8Array(w),k=0;p.forEach((e=>{v.set(new Uint8Array(e),k),k+=e.byteLength})),this.managed=v.buffer}_read_direct_block(e,t,r){let n=e.slice(t,t+r);return s("FHDB"==i(this.direct_block_header,n).get("signature")),n}get_data(e){let t=_.unpack_from("<B",e,0)[0],i=t>>4&3,r=1;if(0==i){s(0==t>>6);let i=this._managed_object_offset_size,n=d(i,e,r);r+=i,i=this._managed_object_length_size;let a=d(i,e,r);return this.managed.slice(n,n+a)}throw 1==i?"tiny objectID not supported in FractalHeap":2==i?"huge objectID not supported in FractalHeap":"unknown objectID type in FractalHeap"}_min_size_integer(e){return this._min_size_nbits(h(e))}_min_size_nbits(e){return Math.ceil(e/8)}*_iter_indirect_block(e,t,r){let n=i(this.indirect_block_header,e,t);t+=this.indirect_block_header_size,s("FHIB"==n.get("signature"));let a=n.get("block_offset").reduce(((e,t,i)=>e+(t<<8*i)),0);n.set("block_offset",a);let[o,l]=this._indirect_info(r),h=[];for(let i=0;i<o;i++){let s=_.unpack_from("<Q",e,t)[0];if(t+=8,s==ei)break;let r=this._calc_block_size(i);h.push([s,r])}let d=[];for(let i=o;i<o+l;i++){let s=_.unpack_from("<Q",e,t)[0];if(t+=8,s==ei)break;let r=this._calc_block_size(i),n=this._iblock_nrows_from_block_size(r);d.push([s,n])}for(let[t,i]of h){let s=this._read_direct_block(e,t,i);yield s}for(let[t,i]of d)for(let s of this._iter_indirect_block(e,t,i))yield s}_calc_block_size(e){let t=Math.floor(e/this.header.get("table_width"));return 2**Math.max(t-1,0)*this.header.get("starting_block_size")}_iblock_nrows_from_block_size(e){let t=Math.floor(Math.log2(e));return s(2**t==e),t-this._indirect_nrows_sub}_indirect_info(e){let t,i,s=this.header.get("table_width"),r=e*s,n=this._max_direct_nrows*s;return e<=n?(t=r,i=0):(t=n,i=r-n),[t,i]}_int_format(e){return["B","H","I","Q"][e-1]}}var Jt=_.unpack_from("8s",new Uint8Array([137,72,68,70,13,10,26,10]).buffer)[0],ei=_.unpack_from("<Q",new Uint8Array([255,255,255,255,255,255,255,255]).buffer)[0],ti=new Map([["format_signature","8s"],["superblock_version","B"],["free_storage_version","B"],["root_group_version","B"],["reserved_0","B"],["shared_header_version","B"],["offset_size","B"],["length_size","B"],["reserved_1","B"],["group_leaf_node_k","H"],["group_internal_node_k","H"],["file_consistency_flags","L"],["base_address_lower","Q"],["free_space_address","Q"],["end_of_file_address","Q"],["driver_information_address","Q"]]),ii=r(ti),si=new Map([["format_signature","8s"],["superblock_version","B"],["offset_size","B"],["length_size","B"],["file_consistency_flags","B"],["base_address","Q"],["superblock_extension_address","Q"],["end_of_file_address","Q"],["root_group_address","Q"],["superblock_checksum","I"]]),ri=r(si),ni=new Map([["link_name_offset","Q"],["object_header_address","Q"],["cache_type","I"],["reserved","I"],["scratch","16s"]]),ai=r(ni),oi=new Map([["signature","4s"],["version","B"],["reserved_0","B"],["symbols","H"]]),_i=r(oi),li=new Map([["signature","4s"],["version","B"],["reserved","3s"],["data_segment_size","Q"],["offset_to_free_list","Q"],["address_of_data_segment","Q"]]),hi=new Map([["signature","4s"],["version","B"],["reserved","3s"],["collection_size","Q"]]),di=r(hi),fi=new Map([["object_index","H"],["reference_count","H"],["reserved","I"],["object_size","Q"]]),ci=r(fi),ui=new Map([["signature","4s"],["version","B"],["object_index_size","H"],["filter_info_size","H"],["flags","B"],["max_managed_object_size","I"],["next_huge_object_index","Q"],["btree_address_huge_objects","Q"],["managed_freespace_size","Q"],["freespace_manager_address","Q"],["managed_space_size","Q"],["managed_alloc_size","Q"],["next_directblock_iterator_address","Q"],["managed_object_count","Q"],["huge_objects_total_size","Q"],["huge_object_count","Q"],["tiny_objects_total_size","Q"],["tiny_object_count","Q"],["table_width","H"],["starting_block_size","Q"],["maximum_direct_block_size","Q"],["log2_maximum_heap_size","H"],["indirect_starting_rows_count","H"],["root_block_address","Q"],["indirect_current_rows_count","H"]]);class gi{constructor(e,t){let i=_.unpack_from("<B",e,t)[0];if(1==i)var[s,r,n]=this._parse_v1_objects(e,t);else{if(i!="O".charCodeAt(0))throw"InvalidHDF5File('unknown Data Object Header')";var[s,r,n]=this._parse_v2_objects(e,t)}this.fh=e,this.msgs=s,this.msg_data=r,this.offset=t,this._global_heaps={},this._header=n,this._filter_pipeline=null,this._chunk_params_set=!1,this._chunks=null,this._chunk_dims=null,this._chunk_address=null}get dtype(){let e=this.find_msg_type(Ti)[0].get("offset_to_message");return new f(this.fh,e).dtype}get chunks(){return this._get_chunk_params(),this._chunks}get shape(){let e=this.find_msg_type(Li)[0].get("offset_to_message");return function(e,t){let r=_.unpack_from("<B",e,t)[0];var n;if(1==r)s(1==(n=i(xi,e,t)).get("version")),t+=Bi;else{if(2!=r)throw"InvalidHDF5File('unknown dataspace message version')";s(2==(n=i(Ei,e,t)).get("version")),t+=Ii}let a=n.get("dimensionality");return _.unpack_from("<"+(2*a).toFixed()+"I",e,t).filter((function(e,t){return t%2==0}))}(this.fh,e)}get filter_pipeline(){if(null!=this._filter_pipeline)return this._filter_pipeline;let e=this.find_msg_type(Yi);if(!e.length)return this._filter_pipeline=null,this._filter_pipeline;var t=e[0].get("offset_to_message");let[s,r]=_.unpack_from("<BB",this.fh,t);t+=_.calcsize("<BB");var a=[];if(1==s){let[e,s]=_.unpack_from("<HI",this.fh,t);t+=_.calcsize("<HI");for(var o=0;o<r;o++){let e=i(Di,this.fh,t);t+=Ci;let s=n(e.get("name_length"),8),r="<"+s.toFixed()+"s",o=_.unpack_from(r,this.fh,t)[0];e.set("filter_name",o),t+=s,r="<"+e.get("client_data_values").toFixed()+"I";let l=_.unpack_from(r,this.fh,t);e.set("client_data",l),t+=4*e.get("client_data_values"),e.get("client_data_values")%2&&(t+=4),a.push(e)}}else{if(2!=s)throw`version ${s} is not supported`;for(let e=0;e<r;e++){let e=new Map,i=this.fh,s=_.unpack_from("<H",i,t)[0];t+=2,e.set("filter_id",s);let r=0;s>255&&(r=_.unpack_from("<H",i,t)[0],t+=2);let n=_.unpack_from("<H",i,t)[0];t+=2;let o=(1&n)>0;e.set("optional",o);let l,h=_.unpack_from("<H",i,t)[0];t+=2,r>0&&(l=_.unpack_from(`${r}s`,i,t)[0],t+=r),e.set("name",l);let d=_.unpack_from(`<${h}i`,i,t);t+=4*h,e.set("client_data_values",d),a.push(e)}}return this._filter_pipeline=a,this._filter_pipeline}find_msg_type(e){return this.msgs.filter((function(t){return t.get("type")==e}))}get_attributes(){let e={},t=this.find_msg_type(Gi);for(let i of t){let t=i.get("offset_to_message"),[s,r]=this.unpack_attribute(t);e[s]=r}return e}get fillvalue(){var e,t=this.find_msg_type(Ki)[0].get("offset_to_message");let s=_.unpack_from("<B",this.fh,t)[0];var r,n,a;if(1==s||2==s)r=i(Mi,this.fh,t),t+=Fi,e=r.get("fillvalue_defined");else{if(3!=s)throw'InvalidHDF5File("Unknown fillvalue msg version: "'+String(s);r=i(Ri,this.fh,t),t+=Oi,e=32&r.get("flags")}if(e?(n=_.unpack_from("<I",this.fh,t)[0],t+=4):n=0,n){let[e,i,s]=o(this.dtype);a=new l(this.fh)[e](t,!i,s)}else a=0;return a}unpack_attribute(e){let t=_.unpack_from("<B",this.fh,e)[0];var r,a;if(1==t)s(1==(r=i(bi,this.fh,e)).get("version")),e+=wi,a=8;else{if(3!=t)throw"unsupported attribute message version: "+t;s(3==(r=i(vi,this.fh,e)).get("version")),e+=ki,a=1}let o=r.get("name_size"),l=_.unpack_from("<"+o.toFixed()+"s",this.fh,e)[0];var h;l=l.replace(/\x00$/,""),e+=n(o,a);try{h=new f(this.fh,e).dtype}catch(e){return console.log("Attribute "+l+" type not implemented, set to null."),[l,null]}e+=n(r.get("datatype_size"),a);let d=this.determine_data_shape(this.fh,e),c=d.reduce((function(e,t){return e*t}),1);e+=n(r.get("dataspace_size"),a);var u=this._attr_value(h,this.fh,c,e);return 0==d.length&&(u=u[0]),[l,u]}determine_data_shape(e,t){let r=_.unpack_from("<B",e,t)[0];var n;if(1==r)s(1==(n=i(xi,e,t)).get("version")),t+=Bi;else{if(2!=r)throw"unknown dataspace message version";s(2==(n=i(Ei,e,t)).get("version")),t+=Ii}let a=n.get("dimensionality");return _.unpack_from("<"+a.toFixed()+"Q",e,t)}_attr_value(e,t,i,s){var r=new Array(i);if(e instanceof Array){let o=e[0];for(var n=0;n<i;n++)if("VLEN_STRING"==o){let i=e[2];var[a,h]=this._vlen_size_and_data(t,s);let o="<"+a.toFixed()+"s",l=_.unpack_from(o,h,0)[0];r[n]=0==i?l:decodeURIComponent(escape(l)),s+=16}else if("REFERENCE"==o){var d=_.unpack_from("<Q",t,s);r[n]=d,s+=8}else{if("VLEN_SEQUENCE"!=o)throw"NotImplementedError";{let i=e[1];var[a,h]=this._vlen_size_and_data(t,s);r[n]=this._attr_value(i,h,a,0),s+=16}}}else{let[a,_,h]=o(e),d=new l(t,0);for(n=0;n<i;n++)r[n]=d[a](s,!_,h),s+=h}return r}_vlen_size_and_data(e,t){let r=_.unpack_from("<I",e,t)[0],n=i(mi,e,t+4),a=n.get("collection_address");var o;return s(n.get("collection_address")<Number.MAX_SAFE_INTEGER),a in this._global_heaps||(o=new Xt(this.fh,a),this._global_heaps[a]=o),[r,(o=this._global_heaps[a]).objects.get(n.get("object_index"))]}_parse_v1_objects(e,t){let n=i(yi,e,t);s(1==n.get("version"));let a=n.get("total_header_messages");for(var o=n.get("object_header_size"),l=t+r(yi),h=e.slice(l,l+o),d=[[l,o]],f=0,c=0,u=new Array(a),g=0;g<a;g++){c>=o&&([l,o]=d[++f],c=0);let t=i(ji,e,l+c),s=l+c+Ni;if(t.set("offset_to_message",s),t.get("type")==$i){var[p,m]=_.unpack_from("<QQ",e,s);d.push([p,m])}c+=Ni+t.get("size"),u[g]=t}return[u,h,n]}_parse_v2_objects(e,t){var[s,r,n]=this._parse_v2_header(e,t);t=n;for(var a=[],o=s.get("size_of_chunk_0"),l=e.slice(t,t+=o),h=[[n,o]],d=0,f=0;;){if(f>=o-Qi){let e=h[++d];if(null==e)break;[n,o]=e,f=0}let t=i(Ai,e,n+f),s=n+f+Qi+r;if(t.set("offset_to_message",s),t.get("type")==$i){var[c,u]=_.unpack_from("<QQ",e,s);h.push([c+4,u-4])}f+=Qi+t.get("size")+r,a.push(t)}return[a,l,s]}_parse_v2_header(e,t){let n=i(zi,e,t);var a;if(t+=r(zi),s(2==n.get("version")),a=4&n.get("flags")?2:0,s(0==(16&n.get("flags"))),32&n.get("flags")){let i=_.unpack_from("<4I",e,t);t+=16,n.set("access_time",i[0]),n.set("modification_time",i[1]),n.set("change_time",i[2]),n.set("birth_time",i[3])}let o=["<B","<H","<I","<Q"][3&n.get("flags")];return n.set("size_of_chunk_0",_.unpack_from(o,e,t)[0]),[n,a,t+=_.calcsize(o)]}get_links(){return Object.fromEntries(this.iter_links())}*iter_links(){for(let e of this.msgs)e.get("type")==qi?yield*this._iter_links_from_symbol_tables(e):e.get("type")==Vi?yield this._get_link_from_link_msg(e):e.get("type")==Zi&&(yield*this._iter_link_from_link_info_msg(e))}*_iter_links_from_symbol_tables(e){s(16==e.get("size"));let t=i(Hi,this.fh,e.get("offset_to_message"));yield*this._iter_links_btree_v1(t.get("btree_address"),t.get("heap_address"))}*_iter_links_btree_v1(e,t){let i=new Dt(this.fh,e),s=new $t(this.fh,t);for(let e of i.symbol_table_addresses()){let t=new qt(this.fh,e);t.assign_name(s),yield*Object.entries(t.get_links(s))}}_get_link_from_link_msg(e){let t=e.get("offset_to_message");return this._decode_link_msg(this.fh,t)[1]}_decode_link_msg(e,t){let[i,r]=_.unpack_from("<BB",e,t);t+=2,s(1==i);let n,a,o=2**(3&r),l=(16&r)>0,h=(4&r)>0;(8&r)>0?(n=_.unpack_from("<B",e,t)[0],t+=1):n=0,s([0,1].includes(n)),h&&(a=_.unpack_from("<Q",e,t)[0],t+=8);let d=0;l&&(d=_.unpack_from("<B",e,t)[0],t+=1);let f=0==d?"ascii":"utf-8",c=["<B","<H","<I","<Q"][3&r],u=_.unpack_from(c,e,t)[0];t+=o;let g,p=new TextDecoder(f).decode(e.slice(t,t+u));if(t+=u,0==n)g=_.unpack_from("<Q",e,t)[0];else if(1==n){let i=_.unpack_from("<H",e,t)[0];t+=2,g=new TextDecoder(f).decode(e.slice(t,t+i))}return[a,[p,g]]}*_iter_link_from_link_info_msg(e){let t=e.get("offset_to_message"),i=this._decode_link_info_msg(this.fh,t),s=i.get("heap_address"),r=i.get("name_btree_address"),n=i.get("order_btree_address");null!=r&&(yield*this._iter_links_btree_v2(r,n,s))}*_iter_links_btree_v2(e,t,i){let s,r=new Wt(this.fh,i);s=t!=pi?new Tt(this.fh,t):new Zt(this.fh,e);let n=new Map;for(let e of s.iter_records()){let t=r.get_data(e.get("heapid")),[i,s]=this._decode_link_msg(t,0);n.set(i,s)}let a=Array.from(n.keys()).sort();for(let e of a)yield n.get(e)}_decode_link_info_msg(e,t){let[r,n]=_.unpack_from("<BB",e,t);s(0==r),t+=2,(1&n)>0&&(t+=8);let a=i((2&n)>0?Ui:Si,e,t),o=new Map;for(let[e,t]of a.entries())o.set(e,t==pi?null:t);return o}get is_dataset(){return this.find_msg_type(Li).length>0}get_data(){let e=this.find_msg_type(Pi)[0].get("offset_to_message");var[t,i,s,r]=this._get_data_message_properties(e);if(0==s)throw"Compact storage of DataObject not implemented";return 1==s?this._get_contiguous_data(r):2==s?this._get_chunked_data(e):void 0}_get_data_message_properties(e){let t,i,r,[n,a,o]=_.unpack_from("<BBB",this.fh,e);return 1==n||2==n?(t=a,i=o,r=e,r+=_.calcsize("<BBB"),r+=_.calcsize("<BI"),s(1==i||2==i)):3!=n&&4!=n||(i=a,r=e,r+=_.calcsize("<BB")),s(n>=1&&n<=4),[n,t,i,r]}_get_contiguous_data(e){let[t]=_.unpack_from("<Q",this.fh,e);if(t==pi){let e=this.shape.reduce((function(e,t){return e*t}),1);return new Array(e)}var i=this.shape.reduce((function(e,t){return e*t}),1);if(this.dtype instanceof Array){let e=this.dtype[0];if("REFERENCE"==e){if(8!=this.dtype[1])throw"NotImplementedError('Unsupported Reference type')";return this.fh.slice(t,t+i)}if("VLEN_STRING"==e){let e=this.dtype[2];var s=[];for(a=0;a<i;a++){var[r,n]=this._vlen_size_and_data(this.fh,t);let i="<"+r.toFixed()+"s",o=_.unpack_from(i,n,0)[0];s[a]=0==e?o:decodeURIComponent(escape(o)),t+=16}return s}throw"NotImplementedError('datatype not implemented')"}{let e=this.dtype;if(/[<>=!@\|]?(i|u|f|S)(\d*)/.test(e)){let[s,r,n]=o(e),_=new Array(i),h=new l(this.fh);for(var a=0;a<i;a++)_[a]=h[s](t+a*n,!r,n);return _}throw"not Implemented - no proper dtype defined"}}_get_chunked_data(e){this._get_chunk_params();let t=new Ct(this.fh,this._chunk_address,this._chunk_dims).construct_data_from_chunks(this.chunks,this.shape,this.dtype,this.filter_pipeline);if(this.dtype instanceof Array&&/^VLEN/.test(this.dtype[0])){let e=this.dtype[0];for(var i=0;i<t.length;i++){let[r,n,a]=t[i];var s;n in this._global_heaps?s=this._global_heaps[n]:(s=new Xt(this.fh,n),this._global_heaps[n]=s);let o=s.objects.get(a);if("VLEN_STRING"==e){let e=this.dtype[2],s="<"+r.toFixed()+"s",n=_.unpack_from(s,o,0)[0];t[i]=0==e?n:decodeURIComponent(escape(n))}}}return t}_get_chunk_params(){if(!this._chunk_params_set){this._chunk_params_set=!0;var e=this.find_msg_type(Pi)[0].get("offset_to_message"),[t,i,r,n]=this._get_data_message_properties(e);if(2==r){var a;if(1==t||2==t){var o=_.unpack_from("<Q",this.fh,n)[0];a=n+_.calcsize("<Q")}else if(3==t){var[i,o]=_.unpack_from("<BQ",this.fh,n);a=n+_.calcsize("<BQ")}s(t>=1&&t<=3);var l="<"+(i-1).toFixed()+"I",h=_.unpack_from(l,this.fh,a);this._chunks=h,this._chunk_dims=i,this._chunk_address=o}}}}var pi=_.unpack_from("<Q",new Uint8Array([255,255,255,255,255,255,255,255]).buffer),mi=new Map([["collection_address","Q"],["object_index","I"]]),bi=(r(mi),new Map([["version","B"],["reserved","B"],["name_size","H"],["datatype_size","H"],["dataspace_size","H"]])),wi=r(bi),vi=new Map([["version","B"],["flags","B"],["name_size","H"],["datatype_size","H"],["dataspace_size","H"],["character_set_encoding","B"]]),ki=r(vi),yi=new Map([["version","B"],["reserved","B"],["total_header_messages","H"],["object_reference_count","I"],["object_header_size","I"],["padding","I"]]),zi=new Map([["signature","4s"],["version","B"],["flags","B"]]),xi=new Map([["version","B"],["dimensionality","B"],["flags","B"],["reserved_0","B"],["reserved_1","I"]]),Bi=r(xi),Ei=new Map([["version","B"],["dimensionality","B"],["flags","B"],["type","B"]]),Ii=r(Ei),ji=new Map([["type","H"],["size","H"],["flags","B"],["reserved","3s"]]),Ni=r(ji),Ai=new Map([["type","B"],["size","H"],["flags","B"]]),Qi=r(Ai),Hi=new Map([["btree_address","Q"],["heap_address","Q"]]);const Si=new Map([["heap_address","Q"],["name_btree_address","Q"]]),Ui=new Map([["heap_address","Q"],["name_btree_address","Q"],["order_btree_address","Q"]]);var Mi=new Map([["version","B"],["space_allocation_time","B"],["fillvalue_write_time","B"],["fillvalue_defined","B"]]),Fi=r(Mi),Ri=new Map([["version","B"],["flags","B"]]),Oi=r(Ri),Di=new Map([["filter_id","H"],["name_length","H"],["flags","H"],["client_data_values","H"]]),Ci=r(Di),Li=1,Zi=2,Ti=3,Ki=5,Vi=6,Pi=8,Yi=11,Gi=12,$i=16,qi=17;e(t,"__version__",(function(){return"0.4.0.dev"}));class Xi{constructor(e,t,i,s=!1){if(null==i?(this.parent=this,this.file=this):(this.parent=i,this.file=i.file),this.name=e,this._links=t.get_links(),this._dataobjects=t,this._attrs=null,this._keys=null,s)return new Proxy(this,Wi)}get keys(){return null==this._keys&&(this._keys=Object.keys(this._links)),this._keys.slice()}get values(){return this.keys.map((e=>this.get(e)))}length(){return this.keys.length}_dereference(e){if(!e)throw"cannot deference null reference";let t=this.file._get_object_by_address(e);if(null==t)throw"reference not found in file";return t}get(e){if("number"==typeof e)return this._dereference(e);var t=ts(e);if("/"==t)return this.file;if("."==t)return this;if(/^\//.test(t))return this.file.get(t.slice(1));if(""!=function(e){let t="/",i=e.lastIndexOf(t)+1,s=e.slice(0,i),r=new RegExp("^"+t+"+$"),n=new RegExp(t+"$");s&&!r.test(s)&&(s=s.replace(n,""));return s}(t))var[i,s]=t.split(/\/(.*)/);else var i=t,s=".";if(!(i in this._links))throw i+" not found in group";var r=ts(this.name+"/"+i);let n=this._links[i];if("string"==typeof n)try{return this.get(n)}catch(e){return null}var a=new gi(this.file._fh,n);if(a.is_dataset){if("."!=s)throw r+" is a dataset, not a group";return new es(r,a,this)}return new Xi(r,a,this).get(s)}visit(e){return this.visititems(((t,i)=>e(t)))}visititems(e){var t=this.name.length;/\/$/.test(this.name)||(t+=1);for(var i=this.values.slice();i;){let s=i.shift();1==i.length&&console.log(s);let r=e(s.name.slice(t),s);if(null!=r)return r;s instanceof Xi&&(i=i.concat(s.values))}return null}get attrs(){return null==this._attrs&&(this._attrs=this._dataobjects.get_attributes()),this._attrs}}e(t,"Group",(function(){return Xi}));const Wi={get:function(e,t,i){return t in e?e[t]:e.get(t)}};class Ji extends Xi{constructor(e,t){var i=new Gt(e,0).offset_to_dataobjects;super("/",new gi(e,i),null),this.parent=this,this._fh=e,this.filename=t||"",this.file=this,this.mode="r",this.userblock_size=0}_get_object_by_address(e){return this._dataobjects.offset==e?this:this.visititems((e=>{e._dataobjects.offset}))}}e(t,"File",(function(){return Ji}));class es extends Array{constructor(e,t,i){super(),this.parent=i,this.file=i.file,this.name=e,this._dataobjects=t,this._attrs=null,this._astype=null}get value(){var e=this._dataobjects.get_data();return null==this._astype?e:e.astype(this._astype)}get shape(){return this._dataobjects.shape}get attrs(){return this._dataobjects.get_attributes()}get dtype(){return this._dataobjects.dtype}get fillvalue(){return this._dataobjects.fillvalue}}function ts(e){return e.replace(/\/(\/)+/g,"/")}e(t,"Dataset",(function(){return es})),window.hdf5=t}();
+(() => {
+  var __defProp = Object.defineProperty;
+  var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
+  var __export = (target, all) => {
+    __markAsModule(target);
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+
+  // esm/high-level.js
+  var high_level_exports = {};
+  __export(high_level_exports, {
+    Dataset: () => Dataset,
+    File: () => File,
+    Group: () => Group,
+    __version__: () => __version__
+  });
+
+  // esm/core.js
+  function _unpack_struct_from(structure, buf, offset = 0) {
+    var output = /* @__PURE__ */ new Map();
+    for (let [key, fmt] of structure.entries()) {
+      let value = struct.unpack_from("<" + fmt, buf, offset);
+      offset += struct.calcsize(fmt);
+      if (value.length == 1) {
+        value = value[0];
+      }
+      ;
+      output.set(key, value);
+    }
+    return output;
+  }
+  function assert(thing) {
+    if (!thing) {
+      thing();
+    }
+  }
+  function _structure_size(structure) {
+    var fmt = "<" + Array.from(structure.values()).join("");
+    return struct.calcsize(fmt);
+  }
+  function _padded_size(size, padding_multiple = 8) {
+    return Math.ceil(size / padding_multiple) * padding_multiple;
+  }
+  var dtype_to_format = {
+    "u": "Uint",
+    "i": "Int",
+    "f": "Float"
+  };
+  function dtype_getter(dtype_str) {
+    var big_endian = struct._is_big_endian(dtype_str);
+    var getter, nbytes;
+    if (/S/.test(dtype_str)) {
+      getter = "getString";
+      nbytes = ((dtype_str.match(/S(\d*)/) || [])[1] || 1) | 0;
+    } else {
+      let [_, fstr, bytestr] = dtype_str.match(/[<>=!@]?(i|u|f)(\d*)/);
+      nbytes = parseInt(bytestr || 4, 10);
+      let nbits = nbytes * 8;
+      getter = "get" + dtype_to_format[fstr] + nbits.toFixed();
+    }
+    return [getter, big_endian, nbytes];
+  }
+  var Struct = class {
+    constructor() {
+      this.big_endian = isBigEndian();
+      this.getters = {
+        "s": "getUint8",
+        "b": "getInt8",
+        "B": "getUint8",
+        "h": "getInt16",
+        "H": "getUint16",
+        "i": "getInt32",
+        "I": "getUint32",
+        "l": "getInt32",
+        "L": "getUint32",
+        "q": "getInt64",
+        "Q": "getUint64",
+        "f": "getFloat32",
+        "d": "getFloat64"
+      };
+      this.byte_lengths = {
+        "s": 1,
+        "b": 1,
+        "B": 1,
+        "h": 2,
+        "H": 2,
+        "i": 4,
+        "I": 4,
+        "l": 4,
+        "L": 4,
+        "q": 8,
+        "Q": 8,
+        "f": 4,
+        "d": 8
+      };
+      let all_formats = Object.keys(this.byte_lengths).join("");
+      this.fmt_size_regex = "(\\d*)([" + all_formats + "])";
+    }
+    calcsize(fmt) {
+      var size = 0;
+      var match;
+      var regex = new RegExp(this.fmt_size_regex, "g");
+      while ((match = regex.exec(fmt)) !== null) {
+        let n = parseInt(match[1] || 1, 10);
+        let f = match[2];
+        let subsize = this.byte_lengths[f];
+        size += n * subsize;
+      }
+      return size;
+    }
+    _is_big_endian(fmt) {
+      var big_endian;
+      if (/^</.test(fmt)) {
+        big_endian = false;
+      } else if (/^(!|>)/.test(fmt)) {
+        big_endian = true;
+      } else {
+        big_endian = this.big_endian;
+      }
+      return big_endian;
+    }
+    unpack_from(fmt, buffer, offset) {
+      var offset = Number(offset || 0);
+      var view = new DataView64(buffer, 0);
+      var output = [];
+      var big_endian = this._is_big_endian(fmt);
+      var match;
+      var regex = new RegExp(this.fmt_size_regex, "g");
+      while ((match = regex.exec(fmt)) !== null) {
+        let n = parseInt(match[1] || 1, 10);
+        let f = match[2];
+        let getter = this.getters[f];
+        let size = this.byte_lengths[f];
+        var append_target;
+        if (f == "s") {
+          var sarray = new Array();
+          append_target = sarray;
+        } else {
+          append_target = output;
+        }
+        for (var i = 0; i < n; i++) {
+          append_target.push(view[getter](offset, !big_endian));
+          offset += size;
+        }
+        if (f == "s") {
+          output.push(sarray.reduce(function(a, b) {
+            return a + String.fromCharCode(b);
+          }, ""));
+        }
+      }
+      return output;
+    }
+  };
+  var struct = new Struct();
+  function isBigEndian() {
+    const array = new Uint8Array(4);
+    const view = new Uint32Array(array.buffer);
+    return !((view[0] = 1) & array[0]);
+  }
+  var WARN_OVERFLOW = false;
+  var MAX_INT64 = 1n << 63n - 1n;
+  var MIN_INT64 = -1n << 63n;
+  var MAX_UINT64 = 1n << 64n;
+  var MIN_UINT64 = 0n;
+  var DataView64 = class extends DataView {
+    getUint64(byteOffset, littleEndian) {
+      const left = BigInt(this.getUint32(byteOffset, littleEndian));
+      const right = BigInt(this.getUint32(byteOffset + 4, littleEndian));
+      let combined = littleEndian ? left + (right << 32n) : (left << 32n) + right;
+      if (WARN_OVERFLOW && (combined < MIN_UINT64 || combined > MAX_UINT64)) {
+        console.warn(combined, "exceeds range of 64-bit unsigned int");
+      }
+      return Number(combined);
+    }
+    getInt64(byteOffset, littleEndian) {
+      var low, high;
+      if (littleEndian) {
+        low = this.getUint32(byteOffset, true);
+        high = this.getInt32(byteOffset + 4, true);
+      } else {
+        high = this.getInt32(byteOffset, false);
+        low = this.getUint32(byteOffset + 4, false);
+      }
+      let combined = BigInt(low) + (BigInt(high) << 32n);
+      if (WARN_OVERFLOW && (combined < MIN_INT64 || combined > MAX_INT64)) {
+        console.warn(combined, "exceeds range of 64-bit signed int");
+      }
+      return Number(combined);
+    }
+    getString(byteOffset, littleEndian, length) {
+      var output = "";
+      for (var i = 0; i < length; i++) {
+        let c = this.getUint8(byteOffset + i);
+        if (c) {
+          output += String.fromCharCode(c);
+        }
+      }
+      return decodeURIComponent(escape(output));
+    }
+    getVLENStruct(byteOffset, littleEndian, length) {
+      let item_size = this.getUint32(byteOffset, littleEndian);
+      let collection_address = this.getUint64(byteOffset + 4, littleEndian);
+      let object_index = this.getUint32(byteOffset + 12, littleEndian);
+      return [item_size, collection_address, object_index];
+    }
+  };
+  function bitSize(integer) {
+    return integer.toString(2).length;
+  }
+  function _unpack_integer(nbytes, fh, offset = 0, littleEndian = true) {
+    let bytes = new Uint8Array(fh.slice(offset, offset + nbytes));
+    if (!littleEndian) {
+      bytes.reverse();
+    }
+    let integer = bytes.reduce((accumulator, currentValue, index) => accumulator + (currentValue << index * 8), 0);
+    return integer;
+  }
+
+  // esm/datatype-msg.js
+  var DatatypeMessage = class {
+    constructor(buf, offset) {
+      this.buf = buf;
+      this.offset = offset;
+      this.dtype = this.determine_dtype();
+    }
+    determine_dtype() {
+      let datatype_msg = _unpack_struct_from(DATATYPE_MSG, this.buf, this.offset);
+      this.offset += DATATYPE_MSG_SIZE;
+      let datatype_class = datatype_msg.get("class_and_version") & 15;
+      if (datatype_class == DATATYPE_FIXED_POINT) {
+        return this._determine_dtype_fixed_point(datatype_msg);
+      } else if (datatype_class == DATATYPE_FLOATING_POINT) {
+        return this._determine_dtype_floating_point(datatype_msg);
+      } else if (datatype_class == DATATYPE_TIME) {
+        throw "Time datatype class not supported.";
+      } else if (datatype_class == DATATYPE_STRING) {
+        return this._determine_dtype_string(datatype_msg);
+      } else if (datatype_class == DATATYPE_BITFIELD) {
+        throw "Bitfield datatype class not supported.";
+      } else if (datatype_class == DATATYPE_OPAQUE) {
+        throw "Opaque datatype class not supported.";
+      } else if (datatype_class == DATATYPE_COMPOUND) {
+        return this._determine_dtype_compound(datatype_msg);
+      } else if (datatype_class == DATATYPE_REFERENCE) {
+        return ["REFERENCE", datatype_msg.get("size")];
+      } else if (datatype_class == DATATYPE_ENUMERATED) {
+        throw "Enumerated datatype class not supported.";
+      } else if (datatype_class == DATATYPE_ARRAY) {
+        throw "Array datatype class not supported.";
+      } else if (datatype_class == DATATYPE_VARIABLE_LENGTH) {
+        let vlen_type = this._determine_dtype_vlen(datatype_msg);
+        if (vlen_type[0] == "VLEN_SEQUENCE") {
+          let base_type = this.determine_dtype();
+          vlen_type = ["VLEN_SEQUENCE", base_type];
+        }
+        return vlen_type;
+      } else {
+        throw "Invalid datatype class " + datatype_class;
+      }
+    }
+    _determine_dtype_fixed_point(datatype_msg) {
+      let length_in_bytes = datatype_msg.get("size");
+      if (![1, 2, 4, 8].includes(length_in_bytes)) {
+        throw "Unsupported datatype size";
+      }
+      let signed = datatype_msg.get("class_bit_field_0") & 8;
+      var dtype_char;
+      if (signed > 0) {
+        dtype_char = "i";
+      } else {
+        dtype_char = "u";
+      }
+      let byte_order = datatype_msg.get("class_bit_field_0") & 1;
+      var byte_order_char;
+      if (byte_order == 0) {
+        byte_order_char = "<";
+      } else {
+        byte_order_char = ">";
+      }
+      this.offset += 4;
+      return byte_order_char + dtype_char + length_in_bytes.toFixed();
+    }
+    _determine_dtype_floating_point(datatype_msg) {
+      let length_in_bytes = datatype_msg.get("size");
+      if (![1, 2, 4, 8].includes(length_in_bytes)) {
+        throw "Unsupported datatype size";
+      }
+      let dtype_char = "f";
+      let byte_order = datatype_msg.get("class_bit_field_0") & 1;
+      var byte_order_char;
+      if (byte_order == 0) {
+        byte_order_char = "<";
+      } else {
+        byte_order_char = ">";
+      }
+      this.offset += 12;
+      return byte_order_char + dtype_char + length_in_bytes.toFixed();
+    }
+    _determine_dtype_string(datatype_msg) {
+      return "S" + datatype_msg.get("size").toFixed();
+    }
+    _determine_dtype_vlen(datatype_msg) {
+      let vlen_type = datatype_msg.get("class_bit_field_0") & 1;
+      if (vlen_type != 1) {
+        return ["VLEN_SEQUENCE", 0, 0];
+      }
+      let padding_type = datatype_msg.get("class_bit_field_0") >> 4;
+      let character_set = datatype_msg.get("class_bit_field_1") & 1;
+      return ["VLEN_STRING", padding_type, character_set];
+    }
+    _determine_dtype_compound(datatype_msg) {
+      throw "not yet implemented!";
+    }
+  };
+  var DATATYPE_MSG = /* @__PURE__ */ new Map([
+    ["class_and_version", "B"],
+    ["class_bit_field_0", "B"],
+    ["class_bit_field_1", "B"],
+    ["class_bit_field_2", "B"],
+    ["size", "I"]
+  ]);
+  var DATATYPE_MSG_SIZE = _structure_size(DATATYPE_MSG);
+  var COMPOUND_PROP_DESC_V1 = /* @__PURE__ */ new Map([
+    ["offset", "I"],
+    ["dimensionality", "B"],
+    ["reserved_0", "B"],
+    ["reserved_1", "B"],
+    ["reserved_2", "B"],
+    ["permutation", "I"],
+    ["reserved_3", "I"],
+    ["dim_size_1", "I"],
+    ["dim_size_2", "I"],
+    ["dim_size_3", "I"],
+    ["dim_size_4", "I"]
+  ]);
+  var COMPOUND_PROP_DESC_V1_SIZE = _structure_size(COMPOUND_PROP_DESC_V1);
+  var DATATYPE_FIXED_POINT = 0;
+  var DATATYPE_FLOATING_POINT = 1;
+  var DATATYPE_TIME = 2;
+  var DATATYPE_STRING = 3;
+  var DATATYPE_BITFIELD = 4;
+  var DATATYPE_OPAQUE = 5;
+  var DATATYPE_COMPOUND = 6;
+  var DATATYPE_REFERENCE = 7;
+  var DATATYPE_ENUMERATED = 8;
+  var DATATYPE_VARIABLE_LENGTH = 9;
+  var DATATYPE_ARRAY = 10;
+
+  // web_modules/pako-es.js
+  var TYPED_OK = typeof Uint8Array !== "undefined" && typeof Uint16Array !== "undefined" && typeof Int32Array !== "undefined";
+  function _has(obj, key) {
+    return Object.prototype.hasOwnProperty.call(obj, key);
+  }
+  function assign(obj) {
+    var sources = Array.prototype.slice.call(arguments, 1);
+    while (sources.length) {
+      var source = sources.shift();
+      if (!source) {
+        continue;
+      }
+      if (typeof source !== "object") {
+        throw new TypeError(source + "must be non-object");
+      }
+      for (var p in source) {
+        if (_has(source, p)) {
+          obj[p] = source[p];
+        }
+      }
+    }
+    return obj;
+  }
+  function shrinkBuf(buf, size) {
+    if (buf.length === size) {
+      return buf;
+    }
+    if (buf.subarray) {
+      return buf.subarray(0, size);
+    }
+    buf.length = size;
+    return buf;
+  }
+  var fnTyped = {
+    arraySet: function(dest, src, src_offs, len, dest_offs) {
+      if (src.subarray && dest.subarray) {
+        dest.set(src.subarray(src_offs, src_offs + len), dest_offs);
+        return;
+      }
+      for (var i = 0; i < len; i++) {
+        dest[dest_offs + i] = src[src_offs + i];
+      }
+    },
+    flattenChunks: function(chunks) {
+      var i, l, len, pos, chunk, result;
+      len = 0;
+      for (i = 0, l = chunks.length; i < l; i++) {
+        len += chunks[i].length;
+      }
+      result = new Uint8Array(len);
+      pos = 0;
+      for (i = 0, l = chunks.length; i < l; i++) {
+        chunk = chunks[i];
+        result.set(chunk, pos);
+        pos += chunk.length;
+      }
+      return result;
+    }
+  };
+  var fnUntyped = {
+    arraySet: function(dest, src, src_offs, len, dest_offs) {
+      for (var i = 0; i < len; i++) {
+        dest[dest_offs + i] = src[src_offs + i];
+      }
+    },
+    flattenChunks: function(chunks) {
+      return [].concat.apply([], chunks);
+    }
+  };
+  var _exports = {};
+  function setTyped(on) {
+    if (on) {
+      assign(_exports, fnTyped, {
+        Buf8: Uint8Array,
+        Buf16: Uint16Array,
+        Buf32: Int32Array
+      });
+    } else {
+      assign(_exports, fnUntyped, {
+        Buf8: Array,
+        Buf16: Array,
+        Buf32: Array
+      });
+    }
+  }
+  setTyped(TYPED_OK);
+  var Buf8 = _exports.Buf8;
+  var Buf16 = _exports.Buf16;
+  var Buf32 = _exports.Buf32;
+  var arraySet = _exports.arraySet;
+  var flattenChunks = _exports.flattenChunks;
+  var Z_FIXED = 4;
+  var Z_BINARY = 0;
+  var Z_TEXT = 1;
+  var Z_UNKNOWN = 2;
+  function zero(buf) {
+    var len = buf.length;
+    while (--len >= 0) {
+      buf[len] = 0;
+    }
+  }
+  var STORED_BLOCK = 0;
+  var STATIC_TREES = 1;
+  var DYN_TREES = 2;
+  var MIN_MATCH = 3;
+  var MAX_MATCH = 258;
+  var LENGTH_CODES = 29;
+  var LITERALS = 256;
+  var L_CODES = LITERALS + 1 + LENGTH_CODES;
+  var D_CODES = 30;
+  var BL_CODES = 19;
+  var HEAP_SIZE = 2 * L_CODES + 1;
+  var MAX_BITS = 15;
+  var Buf_size = 16;
+  var MAX_BL_BITS = 7;
+  var END_BLOCK = 256;
+  var REP_3_6 = 16;
+  var REPZ_3_10 = 17;
+  var REPZ_11_138 = 18;
+  var extra_lbits = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0];
+  var extra_dbits = [0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13];
+  var extra_blbits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 7];
+  var bl_order = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+  var DIST_CODE_LEN = 512;
+  var static_ltree = new Array((L_CODES + 2) * 2);
+  zero(static_ltree);
+  var static_dtree = new Array(D_CODES * 2);
+  zero(static_dtree);
+  var _dist_code = new Array(DIST_CODE_LEN);
+  zero(_dist_code);
+  var _length_code = new Array(MAX_MATCH - MIN_MATCH + 1);
+  zero(_length_code);
+  var base_length = new Array(LENGTH_CODES);
+  zero(base_length);
+  var base_dist = new Array(D_CODES);
+  zero(base_dist);
+  function StaticTreeDesc(static_tree, extra_bits, extra_base, elems, max_length) {
+    this.static_tree = static_tree;
+    this.extra_bits = extra_bits;
+    this.extra_base = extra_base;
+    this.elems = elems;
+    this.max_length = max_length;
+    this.has_stree = static_tree && static_tree.length;
+  }
+  var static_l_desc;
+  var static_d_desc;
+  var static_bl_desc;
+  function TreeDesc(dyn_tree, stat_desc) {
+    this.dyn_tree = dyn_tree;
+    this.max_code = 0;
+    this.stat_desc = stat_desc;
+  }
+  function d_code(dist) {
+    return dist < 256 ? _dist_code[dist] : _dist_code[256 + (dist >>> 7)];
+  }
+  function put_short(s, w) {
+    s.pending_buf[s.pending++] = w & 255;
+    s.pending_buf[s.pending++] = w >>> 8 & 255;
+  }
+  function send_bits(s, value, length) {
+    if (s.bi_valid > Buf_size - length) {
+      s.bi_buf |= value << s.bi_valid & 65535;
+      put_short(s, s.bi_buf);
+      s.bi_buf = value >> Buf_size - s.bi_valid;
+      s.bi_valid += length - Buf_size;
+    } else {
+      s.bi_buf |= value << s.bi_valid & 65535;
+      s.bi_valid += length;
+    }
+  }
+  function send_code(s, c, tree) {
+    send_bits(s, tree[c * 2], tree[c * 2 + 1]);
+  }
+  function bi_reverse(code, len) {
+    var res = 0;
+    do {
+      res |= code & 1;
+      code >>>= 1;
+      res <<= 1;
+    } while (--len > 0);
+    return res >>> 1;
+  }
+  function bi_flush(s) {
+    if (s.bi_valid === 16) {
+      put_short(s, s.bi_buf);
+      s.bi_buf = 0;
+      s.bi_valid = 0;
+    } else if (s.bi_valid >= 8) {
+      s.pending_buf[s.pending++] = s.bi_buf & 255;
+      s.bi_buf >>= 8;
+      s.bi_valid -= 8;
+    }
+  }
+  function gen_bitlen(s, desc) {
+    var tree = desc.dyn_tree;
+    var max_code = desc.max_code;
+    var stree = desc.stat_desc.static_tree;
+    var has_stree = desc.stat_desc.has_stree;
+    var extra = desc.stat_desc.extra_bits;
+    var base = desc.stat_desc.extra_base;
+    var max_length = desc.stat_desc.max_length;
+    var h;
+    var n, m;
+    var bits;
+    var xbits;
+    var f;
+    var overflow = 0;
+    for (bits = 0; bits <= MAX_BITS; bits++) {
+      s.bl_count[bits] = 0;
+    }
+    tree[s.heap[s.heap_max] * 2 + 1] = 0;
+    for (h = s.heap_max + 1; h < HEAP_SIZE; h++) {
+      n = s.heap[h];
+      bits = tree[tree[n * 2 + 1] * 2 + 1] + 1;
+      if (bits > max_length) {
+        bits = max_length;
+        overflow++;
+      }
+      tree[n * 2 + 1] = bits;
+      if (n > max_code) {
+        continue;
+      }
+      s.bl_count[bits]++;
+      xbits = 0;
+      if (n >= base) {
+        xbits = extra[n - base];
+      }
+      f = tree[n * 2];
+      s.opt_len += f * (bits + xbits);
+      if (has_stree) {
+        s.static_len += f * (stree[n * 2 + 1] + xbits);
+      }
+    }
+    if (overflow === 0) {
+      return;
+    }
+    do {
+      bits = max_length - 1;
+      while (s.bl_count[bits] === 0) {
+        bits--;
+      }
+      s.bl_count[bits]--;
+      s.bl_count[bits + 1] += 2;
+      s.bl_count[max_length]--;
+      overflow -= 2;
+    } while (overflow > 0);
+    for (bits = max_length; bits !== 0; bits--) {
+      n = s.bl_count[bits];
+      while (n !== 0) {
+        m = s.heap[--h];
+        if (m > max_code) {
+          continue;
+        }
+        if (tree[m * 2 + 1] !== bits) {
+          s.opt_len += (bits - tree[m * 2 + 1]) * tree[m * 2];
+          tree[m * 2 + 1] = bits;
+        }
+        n--;
+      }
+    }
+  }
+  function gen_codes(tree, max_code, bl_count) {
+    var next_code = new Array(MAX_BITS + 1);
+    var code = 0;
+    var bits;
+    var n;
+    for (bits = 1; bits <= MAX_BITS; bits++) {
+      next_code[bits] = code = code + bl_count[bits - 1] << 1;
+    }
+    for (n = 0; n <= max_code; n++) {
+      var len = tree[n * 2 + 1];
+      if (len === 0) {
+        continue;
+      }
+      tree[n * 2] = bi_reverse(next_code[len]++, len);
+    }
+  }
+  function tr_static_init() {
+    var n;
+    var bits;
+    var length;
+    var code;
+    var dist;
+    var bl_count = new Array(MAX_BITS + 1);
+    length = 0;
+    for (code = 0; code < LENGTH_CODES - 1; code++) {
+      base_length[code] = length;
+      for (n = 0; n < 1 << extra_lbits[code]; n++) {
+        _length_code[length++] = code;
+      }
+    }
+    _length_code[length - 1] = code;
+    dist = 0;
+    for (code = 0; code < 16; code++) {
+      base_dist[code] = dist;
+      for (n = 0; n < 1 << extra_dbits[code]; n++) {
+        _dist_code[dist++] = code;
+      }
+    }
+    dist >>= 7;
+    for (; code < D_CODES; code++) {
+      base_dist[code] = dist << 7;
+      for (n = 0; n < 1 << extra_dbits[code] - 7; n++) {
+        _dist_code[256 + dist++] = code;
+      }
+    }
+    for (bits = 0; bits <= MAX_BITS; bits++) {
+      bl_count[bits] = 0;
+    }
+    n = 0;
+    while (n <= 143) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    while (n <= 255) {
+      static_ltree[n * 2 + 1] = 9;
+      n++;
+      bl_count[9]++;
+    }
+    while (n <= 279) {
+      static_ltree[n * 2 + 1] = 7;
+      n++;
+      bl_count[7]++;
+    }
+    while (n <= 287) {
+      static_ltree[n * 2 + 1] = 8;
+      n++;
+      bl_count[8]++;
+    }
+    gen_codes(static_ltree, L_CODES + 1, bl_count);
+    for (n = 0; n < D_CODES; n++) {
+      static_dtree[n * 2 + 1] = 5;
+      static_dtree[n * 2] = bi_reverse(n, 5);
+    }
+    static_l_desc = new StaticTreeDesc(static_ltree, extra_lbits, LITERALS + 1, L_CODES, MAX_BITS);
+    static_d_desc = new StaticTreeDesc(static_dtree, extra_dbits, 0, D_CODES, MAX_BITS);
+    static_bl_desc = new StaticTreeDesc(new Array(0), extra_blbits, 0, BL_CODES, MAX_BL_BITS);
+  }
+  function init_block(s) {
+    var n;
+    for (n = 0; n < L_CODES; n++) {
+      s.dyn_ltree[n * 2] = 0;
+    }
+    for (n = 0; n < D_CODES; n++) {
+      s.dyn_dtree[n * 2] = 0;
+    }
+    for (n = 0; n < BL_CODES; n++) {
+      s.bl_tree[n * 2] = 0;
+    }
+    s.dyn_ltree[END_BLOCK * 2] = 1;
+    s.opt_len = s.static_len = 0;
+    s.last_lit = s.matches = 0;
+  }
+  function bi_windup(s) {
+    if (s.bi_valid > 8) {
+      put_short(s, s.bi_buf);
+    } else if (s.bi_valid > 0) {
+      s.pending_buf[s.pending++] = s.bi_buf;
+    }
+    s.bi_buf = 0;
+    s.bi_valid = 0;
+  }
+  function copy_block(s, buf, len, header) {
+    bi_windup(s);
+    if (header) {
+      put_short(s, len);
+      put_short(s, ~len);
+    }
+    arraySet(s.pending_buf, s.window, buf, len, s.pending);
+    s.pending += len;
+  }
+  function smaller(tree, n, m, depth) {
+    var _n2 = n * 2;
+    var _m2 = m * 2;
+    return tree[_n2] < tree[_m2] || tree[_n2] === tree[_m2] && depth[n] <= depth[m];
+  }
+  function pqdownheap(s, tree, k) {
+    var v = s.heap[k];
+    var j = k << 1;
+    while (j <= s.heap_len) {
+      if (j < s.heap_len && smaller(tree, s.heap[j + 1], s.heap[j], s.depth)) {
+        j++;
+      }
+      if (smaller(tree, v, s.heap[j], s.depth)) {
+        break;
+      }
+      s.heap[k] = s.heap[j];
+      k = j;
+      j <<= 1;
+    }
+    s.heap[k] = v;
+  }
+  function compress_block(s, ltree, dtree) {
+    var dist;
+    var lc;
+    var lx = 0;
+    var code;
+    var extra;
+    if (s.last_lit !== 0) {
+      do {
+        dist = s.pending_buf[s.d_buf + lx * 2] << 8 | s.pending_buf[s.d_buf + lx * 2 + 1];
+        lc = s.pending_buf[s.l_buf + lx];
+        lx++;
+        if (dist === 0) {
+          send_code(s, lc, ltree);
+        } else {
+          code = _length_code[lc];
+          send_code(s, code + LITERALS + 1, ltree);
+          extra = extra_lbits[code];
+          if (extra !== 0) {
+            lc -= base_length[code];
+            send_bits(s, lc, extra);
+          }
+          dist--;
+          code = d_code(dist);
+          send_code(s, code, dtree);
+          extra = extra_dbits[code];
+          if (extra !== 0) {
+            dist -= base_dist[code];
+            send_bits(s, dist, extra);
+          }
+        }
+      } while (lx < s.last_lit);
+    }
+    send_code(s, END_BLOCK, ltree);
+  }
+  function build_tree(s, desc) {
+    var tree = desc.dyn_tree;
+    var stree = desc.stat_desc.static_tree;
+    var has_stree = desc.stat_desc.has_stree;
+    var elems = desc.stat_desc.elems;
+    var n, m;
+    var max_code = -1;
+    var node2;
+    s.heap_len = 0;
+    s.heap_max = HEAP_SIZE;
+    for (n = 0; n < elems; n++) {
+      if (tree[n * 2] !== 0) {
+        s.heap[++s.heap_len] = max_code = n;
+        s.depth[n] = 0;
+      } else {
+        tree[n * 2 + 1] = 0;
+      }
+    }
+    while (s.heap_len < 2) {
+      node2 = s.heap[++s.heap_len] = max_code < 2 ? ++max_code : 0;
+      tree[node2 * 2] = 1;
+      s.depth[node2] = 0;
+      s.opt_len--;
+      if (has_stree) {
+        s.static_len -= stree[node2 * 2 + 1];
+      }
+    }
+    desc.max_code = max_code;
+    for (n = s.heap_len >> 1; n >= 1; n--) {
+      pqdownheap(s, tree, n);
+    }
+    node2 = elems;
+    do {
+      n = s.heap[1];
+      s.heap[1] = s.heap[s.heap_len--];
+      pqdownheap(s, tree, 1);
+      m = s.heap[1];
+      s.heap[--s.heap_max] = n;
+      s.heap[--s.heap_max] = m;
+      tree[node2 * 2] = tree[n * 2] + tree[m * 2];
+      s.depth[node2] = (s.depth[n] >= s.depth[m] ? s.depth[n] : s.depth[m]) + 1;
+      tree[n * 2 + 1] = tree[m * 2 + 1] = node2;
+      s.heap[1] = node2++;
+      pqdownheap(s, tree, 1);
+    } while (s.heap_len >= 2);
+    s.heap[--s.heap_max] = s.heap[1];
+    gen_bitlen(s, desc);
+    gen_codes(tree, max_code, s.bl_count);
+  }
+  function scan_tree(s, tree, max_code) {
+    var n;
+    var prevlen = -1;
+    var curlen;
+    var nextlen = tree[0 * 2 + 1];
+    var count = 0;
+    var max_count = 7;
+    var min_count = 4;
+    if (nextlen === 0) {
+      max_count = 138;
+      min_count = 3;
+    }
+    tree[(max_code + 1) * 2 + 1] = 65535;
+    for (n = 0; n <= max_code; n++) {
+      curlen = nextlen;
+      nextlen = tree[(n + 1) * 2 + 1];
+      if (++count < max_count && curlen === nextlen) {
+        continue;
+      } else if (count < min_count) {
+        s.bl_tree[curlen * 2] += count;
+      } else if (curlen !== 0) {
+        if (curlen !== prevlen) {
+          s.bl_tree[curlen * 2]++;
+        }
+        s.bl_tree[REP_3_6 * 2]++;
+      } else if (count <= 10) {
+        s.bl_tree[REPZ_3_10 * 2]++;
+      } else {
+        s.bl_tree[REPZ_11_138 * 2]++;
+      }
+      count = 0;
+      prevlen = curlen;
+      if (nextlen === 0) {
+        max_count = 138;
+        min_count = 3;
+      } else if (curlen === nextlen) {
+        max_count = 6;
+        min_count = 3;
+      } else {
+        max_count = 7;
+        min_count = 4;
+      }
+    }
+  }
+  function send_tree(s, tree, max_code) {
+    var n;
+    var prevlen = -1;
+    var curlen;
+    var nextlen = tree[0 * 2 + 1];
+    var count = 0;
+    var max_count = 7;
+    var min_count = 4;
+    if (nextlen === 0) {
+      max_count = 138;
+      min_count = 3;
+    }
+    for (n = 0; n <= max_code; n++) {
+      curlen = nextlen;
+      nextlen = tree[(n + 1) * 2 + 1];
+      if (++count < max_count && curlen === nextlen) {
+        continue;
+      } else if (count < min_count) {
+        do {
+          send_code(s, curlen, s.bl_tree);
+        } while (--count !== 0);
+      } else if (curlen !== 0) {
+        if (curlen !== prevlen) {
+          send_code(s, curlen, s.bl_tree);
+          count--;
+        }
+        send_code(s, REP_3_6, s.bl_tree);
+        send_bits(s, count - 3, 2);
+      } else if (count <= 10) {
+        send_code(s, REPZ_3_10, s.bl_tree);
+        send_bits(s, count - 3, 3);
+      } else {
+        send_code(s, REPZ_11_138, s.bl_tree);
+        send_bits(s, count - 11, 7);
+      }
+      count = 0;
+      prevlen = curlen;
+      if (nextlen === 0) {
+        max_count = 138;
+        min_count = 3;
+      } else if (curlen === nextlen) {
+        max_count = 6;
+        min_count = 3;
+      } else {
+        max_count = 7;
+        min_count = 4;
+      }
+    }
+  }
+  function build_bl_tree(s) {
+    var max_blindex;
+    scan_tree(s, s.dyn_ltree, s.l_desc.max_code);
+    scan_tree(s, s.dyn_dtree, s.d_desc.max_code);
+    build_tree(s, s.bl_desc);
+    for (max_blindex = BL_CODES - 1; max_blindex >= 3; max_blindex--) {
+      if (s.bl_tree[bl_order[max_blindex] * 2 + 1] !== 0) {
+        break;
+      }
+    }
+    s.opt_len += 3 * (max_blindex + 1) + 5 + 5 + 4;
+    return max_blindex;
+  }
+  function send_all_trees(s, lcodes, dcodes, blcodes) {
+    var rank2;
+    send_bits(s, lcodes - 257, 5);
+    send_bits(s, dcodes - 1, 5);
+    send_bits(s, blcodes - 4, 4);
+    for (rank2 = 0; rank2 < blcodes; rank2++) {
+      send_bits(s, s.bl_tree[bl_order[rank2] * 2 + 1], 3);
+    }
+    send_tree(s, s.dyn_ltree, lcodes - 1);
+    send_tree(s, s.dyn_dtree, dcodes - 1);
+  }
+  function detect_data_type(s) {
+    var black_mask = 4093624447;
+    var n;
+    for (n = 0; n <= 31; n++, black_mask >>>= 1) {
+      if (black_mask & 1 && s.dyn_ltree[n * 2] !== 0) {
+        return Z_BINARY;
+      }
+    }
+    if (s.dyn_ltree[9 * 2] !== 0 || s.dyn_ltree[10 * 2] !== 0 || s.dyn_ltree[13 * 2] !== 0) {
+      return Z_TEXT;
+    }
+    for (n = 32; n < LITERALS; n++) {
+      if (s.dyn_ltree[n * 2] !== 0) {
+        return Z_TEXT;
+      }
+    }
+    return Z_BINARY;
+  }
+  var static_init_done = false;
+  function _tr_init(s) {
+    if (!static_init_done) {
+      tr_static_init();
+      static_init_done = true;
+    }
+    s.l_desc = new TreeDesc(s.dyn_ltree, static_l_desc);
+    s.d_desc = new TreeDesc(s.dyn_dtree, static_d_desc);
+    s.bl_desc = new TreeDesc(s.bl_tree, static_bl_desc);
+    s.bi_buf = 0;
+    s.bi_valid = 0;
+    init_block(s);
+  }
+  function _tr_stored_block(s, buf, stored_len, last) {
+    send_bits(s, (STORED_BLOCK << 1) + (last ? 1 : 0), 3);
+    copy_block(s, buf, stored_len, true);
+  }
+  function _tr_align(s) {
+    send_bits(s, STATIC_TREES << 1, 3);
+    send_code(s, END_BLOCK, static_ltree);
+    bi_flush(s);
+  }
+  function _tr_flush_block(s, buf, stored_len, last) {
+    var opt_lenb, static_lenb;
+    var max_blindex = 0;
+    if (s.level > 0) {
+      if (s.strm.data_type === Z_UNKNOWN) {
+        s.strm.data_type = detect_data_type(s);
+      }
+      build_tree(s, s.l_desc);
+      build_tree(s, s.d_desc);
+      max_blindex = build_bl_tree(s);
+      opt_lenb = s.opt_len + 3 + 7 >>> 3;
+      static_lenb = s.static_len + 3 + 7 >>> 3;
+      if (static_lenb <= opt_lenb) {
+        opt_lenb = static_lenb;
+      }
+    } else {
+      opt_lenb = static_lenb = stored_len + 5;
+    }
+    if (stored_len + 4 <= opt_lenb && buf !== -1) {
+      _tr_stored_block(s, buf, stored_len, last);
+    } else if (s.strategy === Z_FIXED || static_lenb === opt_lenb) {
+      send_bits(s, (STATIC_TREES << 1) + (last ? 1 : 0), 3);
+      compress_block(s, static_ltree, static_dtree);
+    } else {
+      send_bits(s, (DYN_TREES << 1) + (last ? 1 : 0), 3);
+      send_all_trees(s, s.l_desc.max_code + 1, s.d_desc.max_code + 1, max_blindex + 1);
+      compress_block(s, s.dyn_ltree, s.dyn_dtree);
+    }
+    init_block(s);
+    if (last) {
+      bi_windup(s);
+    }
+  }
+  function _tr_tally(s, dist, lc) {
+    s.pending_buf[s.d_buf + s.last_lit * 2] = dist >>> 8 & 255;
+    s.pending_buf[s.d_buf + s.last_lit * 2 + 1] = dist & 255;
+    s.pending_buf[s.l_buf + s.last_lit] = lc & 255;
+    s.last_lit++;
+    if (dist === 0) {
+      s.dyn_ltree[lc * 2]++;
+    } else {
+      s.matches++;
+      dist--;
+      s.dyn_ltree[(_length_code[lc] + LITERALS + 1) * 2]++;
+      s.dyn_dtree[d_code(dist) * 2]++;
+    }
+    return s.last_lit === s.lit_bufsize - 1;
+  }
+  function adler32(adler, buf, len, pos) {
+    var s1 = adler & 65535 | 0, s2 = adler >>> 16 & 65535 | 0, n = 0;
+    while (len !== 0) {
+      n = len > 2e3 ? 2e3 : len;
+      len -= n;
+      do {
+        s1 = s1 + buf[pos++] | 0;
+        s2 = s2 + s1 | 0;
+      } while (--n);
+      s1 %= 65521;
+      s2 %= 65521;
+    }
+    return s1 | s2 << 16 | 0;
+  }
+  function makeTable() {
+    var c, table = [];
+    for (var n = 0; n < 256; n++) {
+      c = n;
+      for (var k = 0; k < 8; k++) {
+        c = c & 1 ? 3988292384 ^ c >>> 1 : c >>> 1;
+      }
+      table[n] = c;
+    }
+    return table;
+  }
+  var crcTable = makeTable();
+  function crc32(crc, buf, len, pos) {
+    var t = crcTable, end = pos + len;
+    crc ^= -1;
+    for (var i = pos; i < end; i++) {
+      crc = crc >>> 8 ^ t[(crc ^ buf[i]) & 255];
+    }
+    return crc ^ -1;
+  }
+  var msg = {
+    2: "need dictionary",
+    1: "stream end",
+    0: "",
+    "-1": "file error",
+    "-2": "stream error",
+    "-3": "data error",
+    "-4": "insufficient memory",
+    "-5": "buffer error",
+    "-6": "incompatible version"
+  };
+  var Z_NO_FLUSH = 0;
+  var Z_PARTIAL_FLUSH = 1;
+  var Z_FULL_FLUSH = 3;
+  var Z_FINISH = 4;
+  var Z_BLOCK = 5;
+  var Z_OK = 0;
+  var Z_STREAM_END = 1;
+  var Z_STREAM_ERROR = -2;
+  var Z_DATA_ERROR = -3;
+  var Z_BUF_ERROR = -5;
+  var Z_DEFAULT_COMPRESSION = -1;
+  var Z_FILTERED = 1;
+  var Z_HUFFMAN_ONLY = 2;
+  var Z_RLE = 3;
+  var Z_FIXED$1 = 4;
+  var Z_UNKNOWN$1 = 2;
+  var Z_DEFLATED = 8;
+  var MAX_MEM_LEVEL = 9;
+  var LENGTH_CODES$1 = 29;
+  var LITERALS$1 = 256;
+  var L_CODES$1 = LITERALS$1 + 1 + LENGTH_CODES$1;
+  var D_CODES$1 = 30;
+  var BL_CODES$1 = 19;
+  var HEAP_SIZE$1 = 2 * L_CODES$1 + 1;
+  var MAX_BITS$1 = 15;
+  var MIN_MATCH$1 = 3;
+  var MAX_MATCH$1 = 258;
+  var MIN_LOOKAHEAD = MAX_MATCH$1 + MIN_MATCH$1 + 1;
+  var PRESET_DICT = 32;
+  var INIT_STATE = 42;
+  var EXTRA_STATE = 69;
+  var NAME_STATE = 73;
+  var COMMENT_STATE = 91;
+  var HCRC_STATE = 103;
+  var BUSY_STATE = 113;
+  var FINISH_STATE = 666;
+  var BS_NEED_MORE = 1;
+  var BS_BLOCK_DONE = 2;
+  var BS_FINISH_STARTED = 3;
+  var BS_FINISH_DONE = 4;
+  var OS_CODE = 3;
+  function err(strm, errorCode) {
+    strm.msg = msg[errorCode];
+    return errorCode;
+  }
+  function rank(f) {
+    return (f << 1) - (f > 4 ? 9 : 0);
+  }
+  function zero$1(buf) {
+    var len = buf.length;
+    while (--len >= 0) {
+      buf[len] = 0;
+    }
+  }
+  function flush_pending(strm) {
+    var s = strm.state;
+    var len = s.pending;
+    if (len > strm.avail_out) {
+      len = strm.avail_out;
+    }
+    if (len === 0) {
+      return;
+    }
+    arraySet(strm.output, s.pending_buf, s.pending_out, len, strm.next_out);
+    strm.next_out += len;
+    s.pending_out += len;
+    strm.total_out += len;
+    strm.avail_out -= len;
+    s.pending -= len;
+    if (s.pending === 0) {
+      s.pending_out = 0;
+    }
+  }
+  function flush_block_only(s, last) {
+    _tr_flush_block(s, s.block_start >= 0 ? s.block_start : -1, s.strstart - s.block_start, last);
+    s.block_start = s.strstart;
+    flush_pending(s.strm);
+  }
+  function put_byte(s, b) {
+    s.pending_buf[s.pending++] = b;
+  }
+  function putShortMSB(s, b) {
+    s.pending_buf[s.pending++] = b >>> 8 & 255;
+    s.pending_buf[s.pending++] = b & 255;
+  }
+  function read_buf(strm, buf, start, size) {
+    var len = strm.avail_in;
+    if (len > size) {
+      len = size;
+    }
+    if (len === 0) {
+      return 0;
+    }
+    strm.avail_in -= len;
+    arraySet(buf, strm.input, strm.next_in, len, start);
+    if (strm.state.wrap === 1) {
+      strm.adler = adler32(strm.adler, buf, len, start);
+    } else if (strm.state.wrap === 2) {
+      strm.adler = crc32(strm.adler, buf, len, start);
+    }
+    strm.next_in += len;
+    strm.total_in += len;
+    return len;
+  }
+  function longest_match(s, cur_match) {
+    var chain_length = s.max_chain_length;
+    var scan = s.strstart;
+    var match;
+    var len;
+    var best_len = s.prev_length;
+    var nice_match = s.nice_match;
+    var limit = s.strstart > s.w_size - MIN_LOOKAHEAD ? s.strstart - (s.w_size - MIN_LOOKAHEAD) : 0;
+    var _win = s.window;
+    var wmask = s.w_mask;
+    var prev = s.prev;
+    var strend = s.strstart + MAX_MATCH$1;
+    var scan_end1 = _win[scan + best_len - 1];
+    var scan_end = _win[scan + best_len];
+    if (s.prev_length >= s.good_match) {
+      chain_length >>= 2;
+    }
+    if (nice_match > s.lookahead) {
+      nice_match = s.lookahead;
+    }
+    do {
+      match = cur_match;
+      if (_win[match + best_len] !== scan_end || _win[match + best_len - 1] !== scan_end1 || _win[match] !== _win[scan] || _win[++match] !== _win[scan + 1]) {
+        continue;
+      }
+      scan += 2;
+      match++;
+      do {
+      } while (_win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && _win[++scan] === _win[++match] && scan < strend);
+      len = MAX_MATCH$1 - (strend - scan);
+      scan = strend - MAX_MATCH$1;
+      if (len > best_len) {
+        s.match_start = cur_match;
+        best_len = len;
+        if (len >= nice_match) {
+          break;
+        }
+        scan_end1 = _win[scan + best_len - 1];
+        scan_end = _win[scan + best_len];
+      }
+    } while ((cur_match = prev[cur_match & wmask]) > limit && --chain_length !== 0);
+    if (best_len <= s.lookahead) {
+      return best_len;
+    }
+    return s.lookahead;
+  }
+  function fill_window(s) {
+    var _w_size = s.w_size;
+    var p, n, m, more, str;
+    do {
+      more = s.window_size - s.lookahead - s.strstart;
+      if (s.strstart >= _w_size + (_w_size - MIN_LOOKAHEAD)) {
+        arraySet(s.window, s.window, _w_size, _w_size, 0);
+        s.match_start -= _w_size;
+        s.strstart -= _w_size;
+        s.block_start -= _w_size;
+        n = s.hash_size;
+        p = n;
+        do {
+          m = s.head[--p];
+          s.head[p] = m >= _w_size ? m - _w_size : 0;
+        } while (--n);
+        n = _w_size;
+        p = n;
+        do {
+          m = s.prev[--p];
+          s.prev[p] = m >= _w_size ? m - _w_size : 0;
+        } while (--n);
+        more += _w_size;
+      }
+      if (s.strm.avail_in === 0) {
+        break;
+      }
+      n = read_buf(s.strm, s.window, s.strstart + s.lookahead, more);
+      s.lookahead += n;
+      if (s.lookahead + s.insert >= MIN_MATCH$1) {
+        str = s.strstart - s.insert;
+        s.ins_h = s.window[str];
+        s.ins_h = (s.ins_h << s.hash_shift ^ s.window[str + 1]) & s.hash_mask;
+        while (s.insert) {
+          s.ins_h = (s.ins_h << s.hash_shift ^ s.window[str + MIN_MATCH$1 - 1]) & s.hash_mask;
+          s.prev[str & s.w_mask] = s.head[s.ins_h];
+          s.head[s.ins_h] = str;
+          str++;
+          s.insert--;
+          if (s.lookahead + s.insert < MIN_MATCH$1) {
+            break;
+          }
+        }
+      }
+    } while (s.lookahead < MIN_LOOKAHEAD && s.strm.avail_in !== 0);
+  }
+  function deflate_stored(s, flush) {
+    var max_block_size = 65535;
+    if (max_block_size > s.pending_buf_size - 5) {
+      max_block_size = s.pending_buf_size - 5;
+    }
+    for (; ; ) {
+      if (s.lookahead <= 1) {
+        fill_window(s);
+        if (s.lookahead === 0 && flush === Z_NO_FLUSH) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      s.strstart += s.lookahead;
+      s.lookahead = 0;
+      var max_start = s.block_start + max_block_size;
+      if (s.strstart === 0 || s.strstart >= max_start) {
+        s.lookahead = s.strstart - max_start;
+        s.strstart = max_start;
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+      if (s.strstart - s.block_start >= s.w_size - MIN_LOOKAHEAD) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = 0;
+    if (flush === Z_FINISH) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.strstart > s.block_start) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_NEED_MORE;
+  }
+  function deflate_fast(s, flush) {
+    var hash_head;
+    var bflush;
+    for (; ; ) {
+      if (s.lookahead < MIN_LOOKAHEAD) {
+        fill_window(s);
+        if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      hash_head = 0;
+      if (s.lookahead >= MIN_MATCH$1) {
+        s.ins_h = (s.ins_h << s.hash_shift ^ s.window[s.strstart + MIN_MATCH$1 - 1]) & s.hash_mask;
+        hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = s.strstart;
+      }
+      if (hash_head !== 0 && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+        s.match_length = longest_match(s, hash_head);
+      }
+      if (s.match_length >= MIN_MATCH$1) {
+        bflush = _tr_tally(s, s.strstart - s.match_start, s.match_length - MIN_MATCH$1);
+        s.lookahead -= s.match_length;
+        if (s.match_length <= s.max_lazy_match && s.lookahead >= MIN_MATCH$1) {
+          s.match_length--;
+          do {
+            s.strstart++;
+            s.ins_h = (s.ins_h << s.hash_shift ^ s.window[s.strstart + MIN_MATCH$1 - 1]) & s.hash_mask;
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          } while (--s.match_length !== 0);
+          s.strstart++;
+        } else {
+          s.strstart += s.match_length;
+          s.match_length = 0;
+          s.ins_h = s.window[s.strstart];
+          s.ins_h = (s.ins_h << s.hash_shift ^ s.window[s.strstart + 1]) & s.hash_mask;
+        }
+      } else {
+        bflush = _tr_tally(s, 0, s.window[s.strstart]);
+        s.lookahead--;
+        s.strstart++;
+      }
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = s.strstart < MIN_MATCH$1 - 1 ? s.strstart : MIN_MATCH$1 - 1;
+    if (flush === Z_FINISH) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.last_lit) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  }
+  function deflate_slow(s, flush) {
+    var hash_head;
+    var bflush;
+    var max_insert;
+    for (; ; ) {
+      if (s.lookahead < MIN_LOOKAHEAD) {
+        fill_window(s);
+        if (s.lookahead < MIN_LOOKAHEAD && flush === Z_NO_FLUSH) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      hash_head = 0;
+      if (s.lookahead >= MIN_MATCH$1) {
+        s.ins_h = (s.ins_h << s.hash_shift ^ s.window[s.strstart + MIN_MATCH$1 - 1]) & s.hash_mask;
+        hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = s.strstart;
+      }
+      s.prev_length = s.match_length;
+      s.prev_match = s.match_start;
+      s.match_length = MIN_MATCH$1 - 1;
+      if (hash_head !== 0 && s.prev_length < s.max_lazy_match && s.strstart - hash_head <= s.w_size - MIN_LOOKAHEAD) {
+        s.match_length = longest_match(s, hash_head);
+        if (s.match_length <= 5 && (s.strategy === Z_FILTERED || s.match_length === MIN_MATCH$1 && s.strstart - s.match_start > 4096)) {
+          s.match_length = MIN_MATCH$1 - 1;
+        }
+      }
+      if (s.prev_length >= MIN_MATCH$1 && s.match_length <= s.prev_length) {
+        max_insert = s.strstart + s.lookahead - MIN_MATCH$1;
+        bflush = _tr_tally(s, s.strstart - 1 - s.prev_match, s.prev_length - MIN_MATCH$1);
+        s.lookahead -= s.prev_length - 1;
+        s.prev_length -= 2;
+        do {
+          if (++s.strstart <= max_insert) {
+            s.ins_h = (s.ins_h << s.hash_shift ^ s.window[s.strstart + MIN_MATCH$1 - 1]) & s.hash_mask;
+            hash_head = s.prev[s.strstart & s.w_mask] = s.head[s.ins_h];
+            s.head[s.ins_h] = s.strstart;
+          }
+        } while (--s.prev_length !== 0);
+        s.match_available = 0;
+        s.match_length = MIN_MATCH$1 - 1;
+        s.strstart++;
+        if (bflush) {
+          flush_block_only(s, false);
+          if (s.strm.avail_out === 0) {
+            return BS_NEED_MORE;
+          }
+        }
+      } else if (s.match_available) {
+        bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+        if (bflush) {
+          flush_block_only(s, false);
+        }
+        s.strstart++;
+        s.lookahead--;
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      } else {
+        s.match_available = 1;
+        s.strstart++;
+        s.lookahead--;
+      }
+    }
+    if (s.match_available) {
+      bflush = _tr_tally(s, 0, s.window[s.strstart - 1]);
+      s.match_available = 0;
+    }
+    s.insert = s.strstart < MIN_MATCH$1 - 1 ? s.strstart : MIN_MATCH$1 - 1;
+    if (flush === Z_FINISH) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.last_lit) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  }
+  function deflate_rle(s, flush) {
+    var bflush;
+    var prev;
+    var scan, strend;
+    var _win = s.window;
+    for (; ; ) {
+      if (s.lookahead <= MAX_MATCH$1) {
+        fill_window(s);
+        if (s.lookahead <= MAX_MATCH$1 && flush === Z_NO_FLUSH) {
+          return BS_NEED_MORE;
+        }
+        if (s.lookahead === 0) {
+          break;
+        }
+      }
+      s.match_length = 0;
+      if (s.lookahead >= MIN_MATCH$1 && s.strstart > 0) {
+        scan = s.strstart - 1;
+        prev = _win[scan];
+        if (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan]) {
+          strend = s.strstart + MAX_MATCH$1;
+          do {
+          } while (prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && prev === _win[++scan] && scan < strend);
+          s.match_length = MAX_MATCH$1 - (strend - scan);
+          if (s.match_length > s.lookahead) {
+            s.match_length = s.lookahead;
+          }
+        }
+      }
+      if (s.match_length >= MIN_MATCH$1) {
+        bflush = _tr_tally(s, 1, s.match_length - MIN_MATCH$1);
+        s.lookahead -= s.match_length;
+        s.strstart += s.match_length;
+        s.match_length = 0;
+      } else {
+        bflush = _tr_tally(s, 0, s.window[s.strstart]);
+        s.lookahead--;
+        s.strstart++;
+      }
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = 0;
+    if (flush === Z_FINISH) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.last_lit) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  }
+  function deflate_huff(s, flush) {
+    var bflush;
+    for (; ; ) {
+      if (s.lookahead === 0) {
+        fill_window(s);
+        if (s.lookahead === 0) {
+          if (flush === Z_NO_FLUSH) {
+            return BS_NEED_MORE;
+          }
+          break;
+        }
+      }
+      s.match_length = 0;
+      bflush = _tr_tally(s, 0, s.window[s.strstart]);
+      s.lookahead--;
+      s.strstart++;
+      if (bflush) {
+        flush_block_only(s, false);
+        if (s.strm.avail_out === 0) {
+          return BS_NEED_MORE;
+        }
+      }
+    }
+    s.insert = 0;
+    if (flush === Z_FINISH) {
+      flush_block_only(s, true);
+      if (s.strm.avail_out === 0) {
+        return BS_FINISH_STARTED;
+      }
+      return BS_FINISH_DONE;
+    }
+    if (s.last_lit) {
+      flush_block_only(s, false);
+      if (s.strm.avail_out === 0) {
+        return BS_NEED_MORE;
+      }
+    }
+    return BS_BLOCK_DONE;
+  }
+  function Config(good_length, max_lazy, nice_length, max_chain, func) {
+    this.good_length = good_length;
+    this.max_lazy = max_lazy;
+    this.nice_length = nice_length;
+    this.max_chain = max_chain;
+    this.func = func;
+  }
+  var configuration_table;
+  configuration_table = [
+    new Config(0, 0, 0, 0, deflate_stored),
+    new Config(4, 4, 8, 4, deflate_fast),
+    new Config(4, 5, 16, 8, deflate_fast),
+    new Config(4, 6, 32, 32, deflate_fast),
+    new Config(4, 4, 16, 16, deflate_slow),
+    new Config(8, 16, 32, 32, deflate_slow),
+    new Config(8, 16, 128, 128, deflate_slow),
+    new Config(8, 32, 128, 256, deflate_slow),
+    new Config(32, 128, 258, 1024, deflate_slow),
+    new Config(32, 258, 258, 4096, deflate_slow)
+  ];
+  function lm_init(s) {
+    s.window_size = 2 * s.w_size;
+    zero$1(s.head);
+    s.max_lazy_match = configuration_table[s.level].max_lazy;
+    s.good_match = configuration_table[s.level].good_length;
+    s.nice_match = configuration_table[s.level].nice_length;
+    s.max_chain_length = configuration_table[s.level].max_chain;
+    s.strstart = 0;
+    s.block_start = 0;
+    s.lookahead = 0;
+    s.insert = 0;
+    s.match_length = s.prev_length = MIN_MATCH$1 - 1;
+    s.match_available = 0;
+    s.ins_h = 0;
+  }
+  function DeflateState() {
+    this.strm = null;
+    this.status = 0;
+    this.pending_buf = null;
+    this.pending_buf_size = 0;
+    this.pending_out = 0;
+    this.pending = 0;
+    this.wrap = 0;
+    this.gzhead = null;
+    this.gzindex = 0;
+    this.method = Z_DEFLATED;
+    this.last_flush = -1;
+    this.w_size = 0;
+    this.w_bits = 0;
+    this.w_mask = 0;
+    this.window = null;
+    this.window_size = 0;
+    this.prev = null;
+    this.head = null;
+    this.ins_h = 0;
+    this.hash_size = 0;
+    this.hash_bits = 0;
+    this.hash_mask = 0;
+    this.hash_shift = 0;
+    this.block_start = 0;
+    this.match_length = 0;
+    this.prev_match = 0;
+    this.match_available = 0;
+    this.strstart = 0;
+    this.match_start = 0;
+    this.lookahead = 0;
+    this.prev_length = 0;
+    this.max_chain_length = 0;
+    this.max_lazy_match = 0;
+    this.level = 0;
+    this.strategy = 0;
+    this.good_match = 0;
+    this.nice_match = 0;
+    this.dyn_ltree = new Buf16(HEAP_SIZE$1 * 2);
+    this.dyn_dtree = new Buf16((2 * D_CODES$1 + 1) * 2);
+    this.bl_tree = new Buf16((2 * BL_CODES$1 + 1) * 2);
+    zero$1(this.dyn_ltree);
+    zero$1(this.dyn_dtree);
+    zero$1(this.bl_tree);
+    this.l_desc = null;
+    this.d_desc = null;
+    this.bl_desc = null;
+    this.bl_count = new Buf16(MAX_BITS$1 + 1);
+    this.heap = new Buf16(2 * L_CODES$1 + 1);
+    zero$1(this.heap);
+    this.heap_len = 0;
+    this.heap_max = 0;
+    this.depth = new Buf16(2 * L_CODES$1 + 1);
+    zero$1(this.depth);
+    this.l_buf = 0;
+    this.lit_bufsize = 0;
+    this.last_lit = 0;
+    this.d_buf = 0;
+    this.opt_len = 0;
+    this.static_len = 0;
+    this.matches = 0;
+    this.insert = 0;
+    this.bi_buf = 0;
+    this.bi_valid = 0;
+  }
+  function deflateResetKeep(strm) {
+    var s;
+    if (!strm || !strm.state) {
+      return err(strm, Z_STREAM_ERROR);
+    }
+    strm.total_in = strm.total_out = 0;
+    strm.data_type = Z_UNKNOWN$1;
+    s = strm.state;
+    s.pending = 0;
+    s.pending_out = 0;
+    if (s.wrap < 0) {
+      s.wrap = -s.wrap;
+    }
+    s.status = s.wrap ? INIT_STATE : BUSY_STATE;
+    strm.adler = s.wrap === 2 ? 0 : 1;
+    s.last_flush = Z_NO_FLUSH;
+    _tr_init(s);
+    return Z_OK;
+  }
+  function deflateReset(strm) {
+    var ret = deflateResetKeep(strm);
+    if (ret === Z_OK) {
+      lm_init(strm.state);
+    }
+    return ret;
+  }
+  function deflateSetHeader(strm, head) {
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR;
+    }
+    if (strm.state.wrap !== 2) {
+      return Z_STREAM_ERROR;
+    }
+    strm.state.gzhead = head;
+    return Z_OK;
+  }
+  function deflateInit2(strm, level, method, windowBits, memLevel, strategy) {
+    if (!strm) {
+      return Z_STREAM_ERROR;
+    }
+    var wrap = 1;
+    if (level === Z_DEFAULT_COMPRESSION) {
+      level = 6;
+    }
+    if (windowBits < 0) {
+      wrap = 0;
+      windowBits = -windowBits;
+    } else if (windowBits > 15) {
+      wrap = 2;
+      windowBits -= 16;
+    }
+    if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method !== Z_DEFLATED || windowBits < 8 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > Z_FIXED$1) {
+      return err(strm, Z_STREAM_ERROR);
+    }
+    if (windowBits === 8) {
+      windowBits = 9;
+    }
+    var s = new DeflateState();
+    strm.state = s;
+    s.strm = strm;
+    s.wrap = wrap;
+    s.gzhead = null;
+    s.w_bits = windowBits;
+    s.w_size = 1 << s.w_bits;
+    s.w_mask = s.w_size - 1;
+    s.hash_bits = memLevel + 7;
+    s.hash_size = 1 << s.hash_bits;
+    s.hash_mask = s.hash_size - 1;
+    s.hash_shift = ~~((s.hash_bits + MIN_MATCH$1 - 1) / MIN_MATCH$1);
+    s.window = new Buf8(s.w_size * 2);
+    s.head = new Buf16(s.hash_size);
+    s.prev = new Buf16(s.w_size);
+    s.lit_bufsize = 1 << memLevel + 6;
+    s.pending_buf_size = s.lit_bufsize * 4;
+    s.pending_buf = new Buf8(s.pending_buf_size);
+    s.d_buf = 1 * s.lit_bufsize;
+    s.l_buf = (1 + 2) * s.lit_bufsize;
+    s.level = level;
+    s.strategy = strategy;
+    s.method = method;
+    return deflateReset(strm);
+  }
+  function deflate(strm, flush) {
+    var old_flush, s;
+    var beg, val;
+    if (!strm || !strm.state || flush > Z_BLOCK || flush < 0) {
+      return strm ? err(strm, Z_STREAM_ERROR) : Z_STREAM_ERROR;
+    }
+    s = strm.state;
+    if (!strm.output || !strm.input && strm.avail_in !== 0 || s.status === FINISH_STATE && flush !== Z_FINISH) {
+      return err(strm, strm.avail_out === 0 ? Z_BUF_ERROR : Z_STREAM_ERROR);
+    }
+    s.strm = strm;
+    old_flush = s.last_flush;
+    s.last_flush = flush;
+    if (s.status === INIT_STATE) {
+      if (s.wrap === 2) {
+        strm.adler = 0;
+        put_byte(s, 31);
+        put_byte(s, 139);
+        put_byte(s, 8);
+        if (!s.gzhead) {
+          put_byte(s, 0);
+          put_byte(s, 0);
+          put_byte(s, 0);
+          put_byte(s, 0);
+          put_byte(s, 0);
+          put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+          put_byte(s, OS_CODE);
+          s.status = BUSY_STATE;
+        } else {
+          put_byte(s, (s.gzhead.text ? 1 : 0) + (s.gzhead.hcrc ? 2 : 0) + (!s.gzhead.extra ? 0 : 4) + (!s.gzhead.name ? 0 : 8) + (!s.gzhead.comment ? 0 : 16));
+          put_byte(s, s.gzhead.time & 255);
+          put_byte(s, s.gzhead.time >> 8 & 255);
+          put_byte(s, s.gzhead.time >> 16 & 255);
+          put_byte(s, s.gzhead.time >> 24 & 255);
+          put_byte(s, s.level === 9 ? 2 : s.strategy >= Z_HUFFMAN_ONLY || s.level < 2 ? 4 : 0);
+          put_byte(s, s.gzhead.os & 255);
+          if (s.gzhead.extra && s.gzhead.extra.length) {
+            put_byte(s, s.gzhead.extra.length & 255);
+            put_byte(s, s.gzhead.extra.length >> 8 & 255);
+          }
+          if (s.gzhead.hcrc) {
+            strm.adler = crc32(strm.adler, s.pending_buf, s.pending, 0);
+          }
+          s.gzindex = 0;
+          s.status = EXTRA_STATE;
+        }
+      } else {
+        var header = Z_DEFLATED + (s.w_bits - 8 << 4) << 8;
+        var level_flags = -1;
+        if (s.strategy >= Z_HUFFMAN_ONLY || s.level < 2) {
+          level_flags = 0;
+        } else if (s.level < 6) {
+          level_flags = 1;
+        } else if (s.level === 6) {
+          level_flags = 2;
+        } else {
+          level_flags = 3;
+        }
+        header |= level_flags << 6;
+        if (s.strstart !== 0) {
+          header |= PRESET_DICT;
+        }
+        header += 31 - header % 31;
+        s.status = BUSY_STATE;
+        putShortMSB(s, header);
+        if (s.strstart !== 0) {
+          putShortMSB(s, strm.adler >>> 16);
+          putShortMSB(s, strm.adler & 65535);
+        }
+        strm.adler = 1;
+      }
+    }
+    if (s.status === EXTRA_STATE) {
+      if (s.gzhead.extra) {
+        beg = s.pending;
+        while (s.gzindex < (s.gzhead.extra.length & 65535)) {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            flush_pending(strm);
+            beg = s.pending;
+            if (s.pending === s.pending_buf_size) {
+              break;
+            }
+          }
+          put_byte(s, s.gzhead.extra[s.gzindex] & 255);
+          s.gzindex++;
+        }
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+        if (s.gzindex === s.gzhead.extra.length) {
+          s.gzindex = 0;
+          s.status = NAME_STATE;
+        }
+      } else {
+        s.status = NAME_STATE;
+      }
+    }
+    if (s.status === NAME_STATE) {
+      if (s.gzhead.name) {
+        beg = s.pending;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            flush_pending(strm);
+            beg = s.pending;
+            if (s.pending === s.pending_buf_size) {
+              val = 1;
+              break;
+            }
+          }
+          if (s.gzindex < s.gzhead.name.length) {
+            val = s.gzhead.name.charCodeAt(s.gzindex++) & 255;
+          } else {
+            val = 0;
+          }
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+        if (val === 0) {
+          s.gzindex = 0;
+          s.status = COMMENT_STATE;
+        }
+      } else {
+        s.status = COMMENT_STATE;
+      }
+    }
+    if (s.status === COMMENT_STATE) {
+      if (s.gzhead.comment) {
+        beg = s.pending;
+        do {
+          if (s.pending === s.pending_buf_size) {
+            if (s.gzhead.hcrc && s.pending > beg) {
+              strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+            }
+            flush_pending(strm);
+            beg = s.pending;
+            if (s.pending === s.pending_buf_size) {
+              val = 1;
+              break;
+            }
+          }
+          if (s.gzindex < s.gzhead.comment.length) {
+            val = s.gzhead.comment.charCodeAt(s.gzindex++) & 255;
+          } else {
+            val = 0;
+          }
+          put_byte(s, val);
+        } while (val !== 0);
+        if (s.gzhead.hcrc && s.pending > beg) {
+          strm.adler = crc32(strm.adler, s.pending_buf, s.pending - beg, beg);
+        }
+        if (val === 0) {
+          s.status = HCRC_STATE;
+        }
+      } else {
+        s.status = HCRC_STATE;
+      }
+    }
+    if (s.status === HCRC_STATE) {
+      if (s.gzhead.hcrc) {
+        if (s.pending + 2 > s.pending_buf_size) {
+          flush_pending(strm);
+        }
+        if (s.pending + 2 <= s.pending_buf_size) {
+          put_byte(s, strm.adler & 255);
+          put_byte(s, strm.adler >> 8 & 255);
+          strm.adler = 0;
+          s.status = BUSY_STATE;
+        }
+      } else {
+        s.status = BUSY_STATE;
+      }
+    }
+    if (s.pending !== 0) {
+      flush_pending(strm);
+      if (strm.avail_out === 0) {
+        s.last_flush = -1;
+        return Z_OK;
+      }
+    } else if (strm.avail_in === 0 && rank(flush) <= rank(old_flush) && flush !== Z_FINISH) {
+      return err(strm, Z_BUF_ERROR);
+    }
+    if (s.status === FINISH_STATE && strm.avail_in !== 0) {
+      return err(strm, Z_BUF_ERROR);
+    }
+    if (strm.avail_in !== 0 || s.lookahead !== 0 || flush !== Z_NO_FLUSH && s.status !== FINISH_STATE) {
+      var bstate = s.strategy === Z_HUFFMAN_ONLY ? deflate_huff(s, flush) : s.strategy === Z_RLE ? deflate_rle(s, flush) : configuration_table[s.level].func(s, flush);
+      if (bstate === BS_FINISH_STARTED || bstate === BS_FINISH_DONE) {
+        s.status = FINISH_STATE;
+      }
+      if (bstate === BS_NEED_MORE || bstate === BS_FINISH_STARTED) {
+        if (strm.avail_out === 0) {
+          s.last_flush = -1;
+        }
+        return Z_OK;
+      }
+      if (bstate === BS_BLOCK_DONE) {
+        if (flush === Z_PARTIAL_FLUSH) {
+          _tr_align(s);
+        } else if (flush !== Z_BLOCK) {
+          _tr_stored_block(s, 0, 0, false);
+          if (flush === Z_FULL_FLUSH) {
+            zero$1(s.head);
+            if (s.lookahead === 0) {
+              s.strstart = 0;
+              s.block_start = 0;
+              s.insert = 0;
+            }
+          }
+        }
+        flush_pending(strm);
+        if (strm.avail_out === 0) {
+          s.last_flush = -1;
+          return Z_OK;
+        }
+      }
+    }
+    if (flush !== Z_FINISH) {
+      return Z_OK;
+    }
+    if (s.wrap <= 0) {
+      return Z_STREAM_END;
+    }
+    if (s.wrap === 2) {
+      put_byte(s, strm.adler & 255);
+      put_byte(s, strm.adler >> 8 & 255);
+      put_byte(s, strm.adler >> 16 & 255);
+      put_byte(s, strm.adler >> 24 & 255);
+      put_byte(s, strm.total_in & 255);
+      put_byte(s, strm.total_in >> 8 & 255);
+      put_byte(s, strm.total_in >> 16 & 255);
+      put_byte(s, strm.total_in >> 24 & 255);
+    } else {
+      putShortMSB(s, strm.adler >>> 16);
+      putShortMSB(s, strm.adler & 65535);
+    }
+    flush_pending(strm);
+    if (s.wrap > 0) {
+      s.wrap = -s.wrap;
+    }
+    return s.pending !== 0 ? Z_OK : Z_STREAM_END;
+  }
+  function deflateEnd(strm) {
+    var status;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR;
+    }
+    status = strm.state.status;
+    if (status !== INIT_STATE && status !== EXTRA_STATE && status !== NAME_STATE && status !== COMMENT_STATE && status !== HCRC_STATE && status !== BUSY_STATE && status !== FINISH_STATE) {
+      return err(strm, Z_STREAM_ERROR);
+    }
+    strm.state = null;
+    return status === BUSY_STATE ? err(strm, Z_DATA_ERROR) : Z_OK;
+  }
+  function deflateSetDictionary(strm, dictionary) {
+    var dictLength = dictionary.length;
+    var s;
+    var str, n;
+    var wrap;
+    var avail;
+    var next;
+    var input;
+    var tmpDict;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR;
+    }
+    s = strm.state;
+    wrap = s.wrap;
+    if (wrap === 2 || wrap === 1 && s.status !== INIT_STATE || s.lookahead) {
+      return Z_STREAM_ERROR;
+    }
+    if (wrap === 1) {
+      strm.adler = adler32(strm.adler, dictionary, dictLength, 0);
+    }
+    s.wrap = 0;
+    if (dictLength >= s.w_size) {
+      if (wrap === 0) {
+        zero$1(s.head);
+        s.strstart = 0;
+        s.block_start = 0;
+        s.insert = 0;
+      }
+      tmpDict = new Buf8(s.w_size);
+      arraySet(tmpDict, dictionary, dictLength - s.w_size, s.w_size, 0);
+      dictionary = tmpDict;
+      dictLength = s.w_size;
+    }
+    avail = strm.avail_in;
+    next = strm.next_in;
+    input = strm.input;
+    strm.avail_in = dictLength;
+    strm.next_in = 0;
+    strm.input = dictionary;
+    fill_window(s);
+    while (s.lookahead >= MIN_MATCH$1) {
+      str = s.strstart;
+      n = s.lookahead - (MIN_MATCH$1 - 1);
+      do {
+        s.ins_h = (s.ins_h << s.hash_shift ^ s.window[str + MIN_MATCH$1 - 1]) & s.hash_mask;
+        s.prev[str & s.w_mask] = s.head[s.ins_h];
+        s.head[s.ins_h] = str;
+        str++;
+      } while (--n);
+      s.strstart = str;
+      s.lookahead = MIN_MATCH$1 - 1;
+      fill_window(s);
+    }
+    s.strstart += s.lookahead;
+    s.block_start = s.strstart;
+    s.insert = s.lookahead;
+    s.lookahead = 0;
+    s.match_length = s.prev_length = MIN_MATCH$1 - 1;
+    s.match_available = 0;
+    strm.next_in = next;
+    strm.input = input;
+    strm.avail_in = avail;
+    s.wrap = wrap;
+    return Z_OK;
+  }
+  var STR_APPLY_OK = true;
+  var STR_APPLY_UIA_OK = true;
+  try {
+    String.fromCharCode.apply(null, [0]);
+  } catch (__) {
+    STR_APPLY_OK = false;
+  }
+  try {
+    String.fromCharCode.apply(null, new Uint8Array(1));
+  } catch (__) {
+    STR_APPLY_UIA_OK = false;
+  }
+  var _utf8len = new Buf8(256);
+  for (q = 0; q < 256; q++) {
+    _utf8len[q] = q >= 252 ? 6 : q >= 248 ? 5 : q >= 240 ? 4 : q >= 224 ? 3 : q >= 192 ? 2 : 1;
+  }
+  var q;
+  _utf8len[254] = _utf8len[254] = 1;
+  function string2buf(str) {
+    var buf, c, c2, m_pos, i, str_len = str.length, buf_len = 0;
+    for (m_pos = 0; m_pos < str_len; m_pos++) {
+      c = str.charCodeAt(m_pos);
+      if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+        c2 = str.charCodeAt(m_pos + 1);
+        if ((c2 & 64512) === 56320) {
+          c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+          m_pos++;
+        }
+      }
+      buf_len += c < 128 ? 1 : c < 2048 ? 2 : c < 65536 ? 3 : 4;
+    }
+    buf = new Buf8(buf_len);
+    for (i = 0, m_pos = 0; i < buf_len; m_pos++) {
+      c = str.charCodeAt(m_pos);
+      if ((c & 64512) === 55296 && m_pos + 1 < str_len) {
+        c2 = str.charCodeAt(m_pos + 1);
+        if ((c2 & 64512) === 56320) {
+          c = 65536 + (c - 55296 << 10) + (c2 - 56320);
+          m_pos++;
+        }
+      }
+      if (c < 128) {
+        buf[i++] = c;
+      } else if (c < 2048) {
+        buf[i++] = 192 | c >>> 6;
+        buf[i++] = 128 | c & 63;
+      } else if (c < 65536) {
+        buf[i++] = 224 | c >>> 12;
+        buf[i++] = 128 | c >>> 6 & 63;
+        buf[i++] = 128 | c & 63;
+      } else {
+        buf[i++] = 240 | c >>> 18;
+        buf[i++] = 128 | c >>> 12 & 63;
+        buf[i++] = 128 | c >>> 6 & 63;
+        buf[i++] = 128 | c & 63;
+      }
+    }
+    return buf;
+  }
+  function _buf2binstring(buf, len) {
+    if (len < 65537) {
+      if (buf.subarray && STR_APPLY_UIA_OK || !buf.subarray && STR_APPLY_OK) {
+        return String.fromCharCode.apply(null, shrinkBuf(buf, len));
+      }
+    }
+    var result = "";
+    for (var i = 0; i < len; i++) {
+      result += String.fromCharCode(buf[i]);
+    }
+    return result;
+  }
+  function buf2binstring(buf) {
+    return _buf2binstring(buf, buf.length);
+  }
+  function binstring2buf(str) {
+    var buf = new Buf8(str.length);
+    for (var i = 0, len = buf.length; i < len; i++) {
+      buf[i] = str.charCodeAt(i);
+    }
+    return buf;
+  }
+  function buf2string(buf, max) {
+    var i, out, c, c_len;
+    var len = max || buf.length;
+    var utf16buf = new Array(len * 2);
+    for (out = 0, i = 0; i < len; ) {
+      c = buf[i++];
+      if (c < 128) {
+        utf16buf[out++] = c;
+        continue;
+      }
+      c_len = _utf8len[c];
+      if (c_len > 4) {
+        utf16buf[out++] = 65533;
+        i += c_len - 1;
+        continue;
+      }
+      c &= c_len === 2 ? 31 : c_len === 3 ? 15 : 7;
+      while (c_len > 1 && i < len) {
+        c = c << 6 | buf[i++] & 63;
+        c_len--;
+      }
+      if (c_len > 1) {
+        utf16buf[out++] = 65533;
+        continue;
+      }
+      if (c < 65536) {
+        utf16buf[out++] = c;
+      } else {
+        c -= 65536;
+        utf16buf[out++] = 55296 | c >> 10 & 1023;
+        utf16buf[out++] = 56320 | c & 1023;
+      }
+    }
+    return _buf2binstring(utf16buf, out);
+  }
+  function utf8border(buf, max) {
+    var pos;
+    max = max || buf.length;
+    if (max > buf.length) {
+      max = buf.length;
+    }
+    pos = max - 1;
+    while (pos >= 0 && (buf[pos] & 192) === 128) {
+      pos--;
+    }
+    if (pos < 0) {
+      return max;
+    }
+    if (pos === 0) {
+      return max;
+    }
+    return pos + _utf8len[buf[pos]] > max ? pos : max;
+  }
+  function ZStream() {
+    this.input = null;
+    this.next_in = 0;
+    this.avail_in = 0;
+    this.total_in = 0;
+    this.output = null;
+    this.next_out = 0;
+    this.avail_out = 0;
+    this.total_out = 0;
+    this.msg = "";
+    this.state = null;
+    this.data_type = 2;
+    this.adler = 0;
+  }
+  var toString = Object.prototype.toString;
+  var Z_NO_FLUSH$1 = 0;
+  var Z_FINISH$1 = 4;
+  var Z_OK$1 = 0;
+  var Z_STREAM_END$1 = 1;
+  var Z_SYNC_FLUSH = 2;
+  var Z_DEFAULT_COMPRESSION$1 = -1;
+  var Z_DEFAULT_STRATEGY = 0;
+  var Z_DEFLATED$1 = 8;
+  function Deflate(options) {
+    if (!(this instanceof Deflate))
+      return new Deflate(options);
+    this.options = assign({
+      level: Z_DEFAULT_COMPRESSION$1,
+      method: Z_DEFLATED$1,
+      chunkSize: 16384,
+      windowBits: 15,
+      memLevel: 8,
+      strategy: Z_DEFAULT_STRATEGY,
+      to: ""
+    }, options || {});
+    var opt = this.options;
+    if (opt.raw && opt.windowBits > 0) {
+      opt.windowBits = -opt.windowBits;
+    } else if (opt.gzip && opt.windowBits > 0 && opt.windowBits < 16) {
+      opt.windowBits += 16;
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new ZStream();
+    this.strm.avail_out = 0;
+    var status = deflateInit2(this.strm, opt.level, opt.method, opt.windowBits, opt.memLevel, opt.strategy);
+    if (status !== Z_OK$1) {
+      throw new Error(msg[status]);
+    }
+    if (opt.header) {
+      deflateSetHeader(this.strm, opt.header);
+    }
+    if (opt.dictionary) {
+      var dict;
+      if (typeof opt.dictionary === "string") {
+        dict = string2buf(opt.dictionary);
+      } else if (toString.call(opt.dictionary) === "[object ArrayBuffer]") {
+        dict = new Uint8Array(opt.dictionary);
+      } else {
+        dict = opt.dictionary;
+      }
+      status = deflateSetDictionary(this.strm, dict);
+      if (status !== Z_OK$1) {
+        throw new Error(msg[status]);
+      }
+      this._dict_set = true;
+    }
+  }
+  Deflate.prototype.push = function(data, mode) {
+    var strm = this.strm;
+    var chunkSize = this.options.chunkSize;
+    var status, _mode;
+    if (this.ended) {
+      return false;
+    }
+    _mode = mode === ~~mode ? mode : mode === true ? Z_FINISH$1 : Z_NO_FLUSH$1;
+    if (typeof data === "string") {
+      strm.input = string2buf(data);
+    } else if (toString.call(data) === "[object ArrayBuffer]") {
+      strm.input = new Uint8Array(data);
+    } else {
+      strm.input = data;
+    }
+    strm.next_in = 0;
+    strm.avail_in = strm.input.length;
+    do {
+      if (strm.avail_out === 0) {
+        strm.output = new Buf8(chunkSize);
+        strm.next_out = 0;
+        strm.avail_out = chunkSize;
+      }
+      status = deflate(strm, _mode);
+      if (status !== Z_STREAM_END$1 && status !== Z_OK$1) {
+        this.onEnd(status);
+        this.ended = true;
+        return false;
+      }
+      if (strm.avail_out === 0 || strm.avail_in === 0 && (_mode === Z_FINISH$1 || _mode === Z_SYNC_FLUSH)) {
+        if (this.options.to === "string") {
+          this.onData(buf2binstring(shrinkBuf(strm.output, strm.next_out)));
+        } else {
+          this.onData(shrinkBuf(strm.output, strm.next_out));
+        }
+      }
+    } while ((strm.avail_in > 0 || strm.avail_out === 0) && status !== Z_STREAM_END$1);
+    if (_mode === Z_FINISH$1) {
+      status = deflateEnd(this.strm);
+      this.onEnd(status);
+      this.ended = true;
+      return status === Z_OK$1;
+    }
+    if (_mode === Z_SYNC_FLUSH) {
+      this.onEnd(Z_OK$1);
+      strm.avail_out = 0;
+      return true;
+    }
+    return true;
+  };
+  Deflate.prototype.onData = function(chunk) {
+    this.chunks.push(chunk);
+  };
+  Deflate.prototype.onEnd = function(status) {
+    if (status === Z_OK$1) {
+      if (this.options.to === "string") {
+        this.result = this.chunks.join("");
+      } else {
+        this.result = flattenChunks(this.chunks);
+      }
+    }
+    this.chunks = [];
+    this.err = status;
+    this.msg = this.strm.msg;
+  };
+  function deflate$1(input, options) {
+    var deflator = new Deflate(options);
+    deflator.push(input, true);
+    if (deflator.err) {
+      throw deflator.msg || msg[deflator.err];
+    }
+    return deflator.result;
+  }
+  function deflateRaw(input, options) {
+    options = options || {};
+    options.raw = true;
+    return deflate$1(input, options);
+  }
+  function gzip(input, options) {
+    options = options || {};
+    options.gzip = true;
+    return deflate$1(input, options);
+  }
+  var deflate$2 = /* @__PURE__ */ Object.freeze({
+    Deflate,
+    deflate: deflate$1,
+    deflateRaw,
+    gzip
+  });
+  var BAD = 30;
+  var TYPE = 12;
+  function inflate_fast(strm, start) {
+    var state;
+    var _in;
+    var last;
+    var _out;
+    var beg;
+    var end;
+    var dmax;
+    var wsize;
+    var whave;
+    var wnext;
+    var s_window;
+    var hold;
+    var bits;
+    var lcode;
+    var dcode;
+    var lmask;
+    var dmask;
+    var here;
+    var op;
+    var len;
+    var dist;
+    var from;
+    var from_source;
+    var input, output;
+    state = strm.state;
+    _in = strm.next_in;
+    input = strm.input;
+    last = _in + (strm.avail_in - 5);
+    _out = strm.next_out;
+    output = strm.output;
+    beg = _out - (start - strm.avail_out);
+    end = _out + (strm.avail_out - 257);
+    dmax = state.dmax;
+    wsize = state.wsize;
+    whave = state.whave;
+    wnext = state.wnext;
+    s_window = state.window;
+    hold = state.hold;
+    bits = state.bits;
+    lcode = state.lencode;
+    dcode = state.distcode;
+    lmask = (1 << state.lenbits) - 1;
+    dmask = (1 << state.distbits) - 1;
+    top:
+      do {
+        if (bits < 15) {
+          hold += input[_in++] << bits;
+          bits += 8;
+          hold += input[_in++] << bits;
+          bits += 8;
+        }
+        here = lcode[hold & lmask];
+        dolen:
+          for (; ; ) {
+            op = here >>> 24;
+            hold >>>= op;
+            bits -= op;
+            op = here >>> 16 & 255;
+            if (op === 0) {
+              output[_out++] = here & 65535;
+            } else if (op & 16) {
+              len = here & 65535;
+              op &= 15;
+              if (op) {
+                if (bits < op) {
+                  hold += input[_in++] << bits;
+                  bits += 8;
+                }
+                len += hold & (1 << op) - 1;
+                hold >>>= op;
+                bits -= op;
+              }
+              if (bits < 15) {
+                hold += input[_in++] << bits;
+                bits += 8;
+                hold += input[_in++] << bits;
+                bits += 8;
+              }
+              here = dcode[hold & dmask];
+              dodist:
+                for (; ; ) {
+                  op = here >>> 24;
+                  hold >>>= op;
+                  bits -= op;
+                  op = here >>> 16 & 255;
+                  if (op & 16) {
+                    dist = here & 65535;
+                    op &= 15;
+                    if (bits < op) {
+                      hold += input[_in++] << bits;
+                      bits += 8;
+                      if (bits < op) {
+                        hold += input[_in++] << bits;
+                        bits += 8;
+                      }
+                    }
+                    dist += hold & (1 << op) - 1;
+                    if (dist > dmax) {
+                      strm.msg = "invalid distance too far back";
+                      state.mode = BAD;
+                      break top;
+                    }
+                    hold >>>= op;
+                    bits -= op;
+                    op = _out - beg;
+                    if (dist > op) {
+                      op = dist - op;
+                      if (op > whave) {
+                        if (state.sane) {
+                          strm.msg = "invalid distance too far back";
+                          state.mode = BAD;
+                          break top;
+                        }
+                      }
+                      from = 0;
+                      from_source = s_window;
+                      if (wnext === 0) {
+                        from += wsize - op;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = _out - dist;
+                          from_source = output;
+                        }
+                      } else if (wnext < op) {
+                        from += wsize + wnext - op;
+                        op -= wnext;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = 0;
+                          if (wnext < len) {
+                            op = wnext;
+                            len -= op;
+                            do {
+                              output[_out++] = s_window[from++];
+                            } while (--op);
+                            from = _out - dist;
+                            from_source = output;
+                          }
+                        }
+                      } else {
+                        from += wnext - op;
+                        if (op < len) {
+                          len -= op;
+                          do {
+                            output[_out++] = s_window[from++];
+                          } while (--op);
+                          from = _out - dist;
+                          from_source = output;
+                        }
+                      }
+                      while (len > 2) {
+                        output[_out++] = from_source[from++];
+                        output[_out++] = from_source[from++];
+                        output[_out++] = from_source[from++];
+                        len -= 3;
+                      }
+                      if (len) {
+                        output[_out++] = from_source[from++];
+                        if (len > 1) {
+                          output[_out++] = from_source[from++];
+                        }
+                      }
+                    } else {
+                      from = _out - dist;
+                      do {
+                        output[_out++] = output[from++];
+                        output[_out++] = output[from++];
+                        output[_out++] = output[from++];
+                        len -= 3;
+                      } while (len > 2);
+                      if (len) {
+                        output[_out++] = output[from++];
+                        if (len > 1) {
+                          output[_out++] = output[from++];
+                        }
+                      }
+                    }
+                  } else if ((op & 64) === 0) {
+                    here = dcode[(here & 65535) + (hold & (1 << op) - 1)];
+                    continue dodist;
+                  } else {
+                    strm.msg = "invalid distance code";
+                    state.mode = BAD;
+                    break top;
+                  }
+                  break;
+                }
+            } else if ((op & 64) === 0) {
+              here = lcode[(here & 65535) + (hold & (1 << op) - 1)];
+              continue dolen;
+            } else if (op & 32) {
+              state.mode = TYPE;
+              break top;
+            } else {
+              strm.msg = "invalid literal/length code";
+              state.mode = BAD;
+              break top;
+            }
+            break;
+          }
+      } while (_in < last && _out < end);
+    len = bits >> 3;
+    _in -= len;
+    bits -= len << 3;
+    hold &= (1 << bits) - 1;
+    strm.next_in = _in;
+    strm.next_out = _out;
+    strm.avail_in = _in < last ? 5 + (last - _in) : 5 - (_in - last);
+    strm.avail_out = _out < end ? 257 + (end - _out) : 257 - (_out - end);
+    state.hold = hold;
+    state.bits = bits;
+    return;
+  }
+  var MAXBITS = 15;
+  var ENOUGH_LENS = 852;
+  var ENOUGH_DISTS = 592;
+  var CODES = 0;
+  var LENS = 1;
+  var DISTS = 2;
+  var lbase = [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    13,
+    15,
+    17,
+    19,
+    23,
+    27,
+    31,
+    35,
+    43,
+    51,
+    59,
+    67,
+    83,
+    99,
+    115,
+    131,
+    163,
+    195,
+    227,
+    258,
+    0,
+    0
+  ];
+  var lext = [
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    16,
+    17,
+    17,
+    17,
+    17,
+    18,
+    18,
+    18,
+    18,
+    19,
+    19,
+    19,
+    19,
+    20,
+    20,
+    20,
+    20,
+    21,
+    21,
+    21,
+    21,
+    16,
+    72,
+    78
+  ];
+  var dbase = [
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    9,
+    13,
+    17,
+    25,
+    33,
+    49,
+    65,
+    97,
+    129,
+    193,
+    257,
+    385,
+    513,
+    769,
+    1025,
+    1537,
+    2049,
+    3073,
+    4097,
+    6145,
+    8193,
+    12289,
+    16385,
+    24577,
+    0,
+    0
+  ];
+  var dext = [
+    16,
+    16,
+    16,
+    16,
+    17,
+    17,
+    18,
+    18,
+    19,
+    19,
+    20,
+    20,
+    21,
+    21,
+    22,
+    22,
+    23,
+    23,
+    24,
+    24,
+    25,
+    25,
+    26,
+    26,
+    27,
+    27,
+    28,
+    28,
+    29,
+    29,
+    64,
+    64
+  ];
+  function inflate_table(type, lens, lens_index, codes, table, table_index, work, opts) {
+    var bits = opts.bits;
+    var len = 0;
+    var sym = 0;
+    var min = 0, max = 0;
+    var root = 0;
+    var curr = 0;
+    var drop = 0;
+    var left = 0;
+    var used = 0;
+    var huff = 0;
+    var incr;
+    var fill;
+    var low;
+    var mask;
+    var next;
+    var base = null;
+    var base_index = 0;
+    var end;
+    var count = new Buf16(MAXBITS + 1);
+    var offs = new Buf16(MAXBITS + 1);
+    var extra = null;
+    var extra_index = 0;
+    var here_bits, here_op, here_val;
+    for (len = 0; len <= MAXBITS; len++) {
+      count[len] = 0;
+    }
+    for (sym = 0; sym < codes; sym++) {
+      count[lens[lens_index + sym]]++;
+    }
+    root = bits;
+    for (max = MAXBITS; max >= 1; max--) {
+      if (count[max] !== 0) {
+        break;
+      }
+    }
+    if (root > max) {
+      root = max;
+    }
+    if (max === 0) {
+      table[table_index++] = 1 << 24 | 64 << 16 | 0;
+      table[table_index++] = 1 << 24 | 64 << 16 | 0;
+      opts.bits = 1;
+      return 0;
+    }
+    for (min = 1; min < max; min++) {
+      if (count[min] !== 0) {
+        break;
+      }
+    }
+    if (root < min) {
+      root = min;
+    }
+    left = 1;
+    for (len = 1; len <= MAXBITS; len++) {
+      left <<= 1;
+      left -= count[len];
+      if (left < 0) {
+        return -1;
+      }
+    }
+    if (left > 0 && (type === CODES || max !== 1)) {
+      return -1;
+    }
+    offs[1] = 0;
+    for (len = 1; len < MAXBITS; len++) {
+      offs[len + 1] = offs[len] + count[len];
+    }
+    for (sym = 0; sym < codes; sym++) {
+      if (lens[lens_index + sym] !== 0) {
+        work[offs[lens[lens_index + sym]]++] = sym;
+      }
+    }
+    if (type === CODES) {
+      base = extra = work;
+      end = 19;
+    } else if (type === LENS) {
+      base = lbase;
+      base_index -= 257;
+      extra = lext;
+      extra_index -= 257;
+      end = 256;
+    } else {
+      base = dbase;
+      extra = dext;
+      end = -1;
+    }
+    huff = 0;
+    sym = 0;
+    len = min;
+    next = table_index;
+    curr = root;
+    drop = 0;
+    low = -1;
+    used = 1 << root;
+    mask = used - 1;
+    if (type === LENS && used > ENOUGH_LENS || type === DISTS && used > ENOUGH_DISTS) {
+      return 1;
+    }
+    for (; ; ) {
+      here_bits = len - drop;
+      if (work[sym] < end) {
+        here_op = 0;
+        here_val = work[sym];
+      } else if (work[sym] > end) {
+        here_op = extra[extra_index + work[sym]];
+        here_val = base[base_index + work[sym]];
+      } else {
+        here_op = 32 + 64;
+        here_val = 0;
+      }
+      incr = 1 << len - drop;
+      fill = 1 << curr;
+      min = fill;
+      do {
+        fill -= incr;
+        table[next + (huff >> drop) + fill] = here_bits << 24 | here_op << 16 | here_val | 0;
+      } while (fill !== 0);
+      incr = 1 << len - 1;
+      while (huff & incr) {
+        incr >>= 1;
+      }
+      if (incr !== 0) {
+        huff &= incr - 1;
+        huff += incr;
+      } else {
+        huff = 0;
+      }
+      sym++;
+      if (--count[len] === 0) {
+        if (len === max) {
+          break;
+        }
+        len = lens[lens_index + work[sym]];
+      }
+      if (len > root && (huff & mask) !== low) {
+        if (drop === 0) {
+          drop = root;
+        }
+        next += min;
+        curr = len - drop;
+        left = 1 << curr;
+        while (curr + drop < max) {
+          left -= count[curr + drop];
+          if (left <= 0) {
+            break;
+          }
+          curr++;
+          left <<= 1;
+        }
+        used += 1 << curr;
+        if (type === LENS && used > ENOUGH_LENS || type === DISTS && used > ENOUGH_DISTS) {
+          return 1;
+        }
+        low = huff & mask;
+        table[low] = root << 24 | curr << 16 | next - table_index | 0;
+      }
+    }
+    if (huff !== 0) {
+      table[next + huff] = len - drop << 24 | 64 << 16 | 0;
+    }
+    opts.bits = root;
+    return 0;
+  }
+  var CODES$1 = 0;
+  var LENS$1 = 1;
+  var DISTS$1 = 2;
+  var Z_FINISH$2 = 4;
+  var Z_BLOCK$1 = 5;
+  var Z_TREES = 6;
+  var Z_OK$2 = 0;
+  var Z_STREAM_END$2 = 1;
+  var Z_NEED_DICT = 2;
+  var Z_STREAM_ERROR$1 = -2;
+  var Z_DATA_ERROR$1 = -3;
+  var Z_MEM_ERROR = -4;
+  var Z_BUF_ERROR$1 = -5;
+  var Z_DEFLATED$2 = 8;
+  var HEAD = 1;
+  var FLAGS = 2;
+  var TIME = 3;
+  var OS = 4;
+  var EXLEN = 5;
+  var EXTRA = 6;
+  var NAME = 7;
+  var COMMENT = 8;
+  var HCRC = 9;
+  var DICTID = 10;
+  var DICT = 11;
+  var TYPE$1 = 12;
+  var TYPEDO = 13;
+  var STORED = 14;
+  var COPY_ = 15;
+  var COPY = 16;
+  var TABLE = 17;
+  var LENLENS = 18;
+  var CODELENS = 19;
+  var LEN_ = 20;
+  var LEN = 21;
+  var LENEXT = 22;
+  var DIST = 23;
+  var DISTEXT = 24;
+  var MATCH = 25;
+  var LIT = 26;
+  var CHECK = 27;
+  var LENGTH = 28;
+  var DONE = 29;
+  var BAD$1 = 30;
+  var MEM = 31;
+  var SYNC = 32;
+  var ENOUGH_LENS$1 = 852;
+  var ENOUGH_DISTS$1 = 592;
+  function zswap32(q) {
+    return (q >>> 24 & 255) + (q >>> 8 & 65280) + ((q & 65280) << 8) + ((q & 255) << 24);
+  }
+  function InflateState() {
+    this.mode = 0;
+    this.last = false;
+    this.wrap = 0;
+    this.havedict = false;
+    this.flags = 0;
+    this.dmax = 0;
+    this.check = 0;
+    this.total = 0;
+    this.head = null;
+    this.wbits = 0;
+    this.wsize = 0;
+    this.whave = 0;
+    this.wnext = 0;
+    this.window = null;
+    this.hold = 0;
+    this.bits = 0;
+    this.length = 0;
+    this.offset = 0;
+    this.extra = 0;
+    this.lencode = null;
+    this.distcode = null;
+    this.lenbits = 0;
+    this.distbits = 0;
+    this.ncode = 0;
+    this.nlen = 0;
+    this.ndist = 0;
+    this.have = 0;
+    this.next = null;
+    this.lens = new Buf16(320);
+    this.work = new Buf16(288);
+    this.lendyn = null;
+    this.distdyn = null;
+    this.sane = 0;
+    this.back = 0;
+    this.was = 0;
+  }
+  function inflateResetKeep(strm) {
+    var state;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    strm.total_in = strm.total_out = state.total = 0;
+    strm.msg = "";
+    if (state.wrap) {
+      strm.adler = state.wrap & 1;
+    }
+    state.mode = HEAD;
+    state.last = 0;
+    state.havedict = 0;
+    state.dmax = 32768;
+    state.head = null;
+    state.hold = 0;
+    state.bits = 0;
+    state.lencode = state.lendyn = new Buf32(ENOUGH_LENS$1);
+    state.distcode = state.distdyn = new Buf32(ENOUGH_DISTS$1);
+    state.sane = 1;
+    state.back = -1;
+    return Z_OK$2;
+  }
+  function inflateReset(strm) {
+    var state;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    state.wsize = 0;
+    state.whave = 0;
+    state.wnext = 0;
+    return inflateResetKeep(strm);
+  }
+  function inflateReset2(strm, windowBits) {
+    var wrap;
+    var state;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if (windowBits < 0) {
+      wrap = 0;
+      windowBits = -windowBits;
+    } else {
+      wrap = (windowBits >> 4) + 1;
+      if (windowBits < 48) {
+        windowBits &= 15;
+      }
+    }
+    if (windowBits && (windowBits < 8 || windowBits > 15)) {
+      return Z_STREAM_ERROR$1;
+    }
+    if (state.window !== null && state.wbits !== windowBits) {
+      state.window = null;
+    }
+    state.wrap = wrap;
+    state.wbits = windowBits;
+    return inflateReset(strm);
+  }
+  function inflateInit2(strm, windowBits) {
+    var ret;
+    var state;
+    if (!strm) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = new InflateState();
+    strm.state = state;
+    state.window = null;
+    ret = inflateReset2(strm, windowBits);
+    if (ret !== Z_OK$2) {
+      strm.state = null;
+    }
+    return ret;
+  }
+  var virgin = true;
+  var lenfix;
+  var distfix;
+  function fixedtables(state) {
+    if (virgin) {
+      var sym;
+      lenfix = new Buf32(512);
+      distfix = new Buf32(32);
+      sym = 0;
+      while (sym < 144) {
+        state.lens[sym++] = 8;
+      }
+      while (sym < 256) {
+        state.lens[sym++] = 9;
+      }
+      while (sym < 280) {
+        state.lens[sym++] = 7;
+      }
+      while (sym < 288) {
+        state.lens[sym++] = 8;
+      }
+      inflate_table(LENS$1, state.lens, 0, 288, lenfix, 0, state.work, { bits: 9 });
+      sym = 0;
+      while (sym < 32) {
+        state.lens[sym++] = 5;
+      }
+      inflate_table(DISTS$1, state.lens, 0, 32, distfix, 0, state.work, { bits: 5 });
+      virgin = false;
+    }
+    state.lencode = lenfix;
+    state.lenbits = 9;
+    state.distcode = distfix;
+    state.distbits = 5;
+  }
+  function updatewindow(strm, src, end, copy) {
+    var dist;
+    var state = strm.state;
+    if (state.window === null) {
+      state.wsize = 1 << state.wbits;
+      state.wnext = 0;
+      state.whave = 0;
+      state.window = new Buf8(state.wsize);
+    }
+    if (copy >= state.wsize) {
+      arraySet(state.window, src, end - state.wsize, state.wsize, 0);
+      state.wnext = 0;
+      state.whave = state.wsize;
+    } else {
+      dist = state.wsize - state.wnext;
+      if (dist > copy) {
+        dist = copy;
+      }
+      arraySet(state.window, src, end - copy, dist, state.wnext);
+      copy -= dist;
+      if (copy) {
+        arraySet(state.window, src, end - copy, copy, 0);
+        state.wnext = copy;
+        state.whave = state.wsize;
+      } else {
+        state.wnext += dist;
+        if (state.wnext === state.wsize) {
+          state.wnext = 0;
+        }
+        if (state.whave < state.wsize) {
+          state.whave += dist;
+        }
+      }
+    }
+    return 0;
+  }
+  function inflate(strm, flush) {
+    var state;
+    var input, output;
+    var next;
+    var put;
+    var have, left;
+    var hold;
+    var bits;
+    var _in, _out;
+    var copy;
+    var from;
+    var from_source;
+    var here = 0;
+    var here_bits, here_op, here_val;
+    var last_bits, last_op, last_val;
+    var len;
+    var ret;
+    var hbuf = new Buf8(4);
+    var opts;
+    var n;
+    var order = [16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15];
+    if (!strm || !strm.state || !strm.output || !strm.input && strm.avail_in !== 0) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if (state.mode === TYPE$1) {
+      state.mode = TYPEDO;
+    }
+    put = strm.next_out;
+    output = strm.output;
+    left = strm.avail_out;
+    next = strm.next_in;
+    input = strm.input;
+    have = strm.avail_in;
+    hold = state.hold;
+    bits = state.bits;
+    _in = have;
+    _out = left;
+    ret = Z_OK$2;
+    inf_leave:
+      for (; ; ) {
+        switch (state.mode) {
+          case HEAD:
+            if (state.wrap === 0) {
+              state.mode = TYPEDO;
+              break;
+            }
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if (state.wrap & 2 && hold === 35615) {
+              state.check = 0;
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32(state.check, hbuf, 2, 0);
+              hold = 0;
+              bits = 0;
+              state.mode = FLAGS;
+              break;
+            }
+            state.flags = 0;
+            if (state.head) {
+              state.head.done = false;
+            }
+            if (!(state.wrap & 1) || (((hold & 255) << 8) + (hold >> 8)) % 31) {
+              strm.msg = "incorrect header check";
+              state.mode = BAD$1;
+              break;
+            }
+            if ((hold & 15) !== Z_DEFLATED$2) {
+              strm.msg = "unknown compression method";
+              state.mode = BAD$1;
+              break;
+            }
+            hold >>>= 4;
+            bits -= 4;
+            len = (hold & 15) + 8;
+            if (state.wbits === 0) {
+              state.wbits = len;
+            } else if (len > state.wbits) {
+              strm.msg = "invalid window size";
+              state.mode = BAD$1;
+              break;
+            }
+            state.dmax = 1 << len;
+            strm.adler = state.check = 1;
+            state.mode = hold & 512 ? DICTID : TYPE$1;
+            hold = 0;
+            bits = 0;
+            break;
+          case FLAGS:
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            state.flags = hold;
+            if ((state.flags & 255) !== Z_DEFLATED$2) {
+              strm.msg = "unknown compression method";
+              state.mode = BAD$1;
+              break;
+            }
+            if (state.flags & 57344) {
+              strm.msg = "unknown header flags set";
+              state.mode = BAD$1;
+              break;
+            }
+            if (state.head) {
+              state.head.text = hold >> 8 & 1;
+            }
+            if (state.flags & 512) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32(state.check, hbuf, 2, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = TIME;
+          case TIME:
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if (state.head) {
+              state.head.time = hold;
+            }
+            if (state.flags & 512) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              hbuf[2] = hold >>> 16 & 255;
+              hbuf[3] = hold >>> 24 & 255;
+              state.check = crc32(state.check, hbuf, 4, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = OS;
+          case OS:
+            while (bits < 16) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if (state.head) {
+              state.head.xflags = hold & 255;
+              state.head.os = hold >> 8;
+            }
+            if (state.flags & 512) {
+              hbuf[0] = hold & 255;
+              hbuf[1] = hold >>> 8 & 255;
+              state.check = crc32(state.check, hbuf, 2, 0);
+            }
+            hold = 0;
+            bits = 0;
+            state.mode = EXLEN;
+          case EXLEN:
+            if (state.flags & 1024) {
+              while (bits < 16) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              state.length = hold;
+              if (state.head) {
+                state.head.extra_len = hold;
+              }
+              if (state.flags & 512) {
+                hbuf[0] = hold & 255;
+                hbuf[1] = hold >>> 8 & 255;
+                state.check = crc32(state.check, hbuf, 2, 0);
+              }
+              hold = 0;
+              bits = 0;
+            } else if (state.head) {
+              state.head.extra = null;
+            }
+            state.mode = EXTRA;
+          case EXTRA:
+            if (state.flags & 1024) {
+              copy = state.length;
+              if (copy > have) {
+                copy = have;
+              }
+              if (copy) {
+                if (state.head) {
+                  len = state.head.extra_len - state.length;
+                  if (!state.head.extra) {
+                    state.head.extra = new Array(state.head.extra_len);
+                  }
+                  arraySet(state.head.extra, input, next, copy, len);
+                }
+                if (state.flags & 512) {
+                  state.check = crc32(state.check, input, copy, next);
+                }
+                have -= copy;
+                next += copy;
+                state.length -= copy;
+              }
+              if (state.length) {
+                break inf_leave;
+              }
+            }
+            state.length = 0;
+            state.mode = NAME;
+          case NAME:
+            if (state.flags & 2048) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              copy = 0;
+              do {
+                len = input[next + copy++];
+                if (state.head && len && state.length < 65536) {
+                  state.head.name += String.fromCharCode(len);
+                }
+              } while (len && copy < have);
+              if (state.flags & 512) {
+                state.check = crc32(state.check, input, copy, next);
+              }
+              have -= copy;
+              next += copy;
+              if (len) {
+                break inf_leave;
+              }
+            } else if (state.head) {
+              state.head.name = null;
+            }
+            state.length = 0;
+            state.mode = COMMENT;
+          case COMMENT:
+            if (state.flags & 4096) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              copy = 0;
+              do {
+                len = input[next + copy++];
+                if (state.head && len && state.length < 65536) {
+                  state.head.comment += String.fromCharCode(len);
+                }
+              } while (len && copy < have);
+              if (state.flags & 512) {
+                state.check = crc32(state.check, input, copy, next);
+              }
+              have -= copy;
+              next += copy;
+              if (len) {
+                break inf_leave;
+              }
+            } else if (state.head) {
+              state.head.comment = null;
+            }
+            state.mode = HCRC;
+          case HCRC:
+            if (state.flags & 512) {
+              while (bits < 16) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              if (hold !== (state.check & 65535)) {
+                strm.msg = "header crc mismatch";
+                state.mode = BAD$1;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            if (state.head) {
+              state.head.hcrc = state.flags >> 9 & 1;
+              state.head.done = true;
+            }
+            strm.adler = state.check = 0;
+            state.mode = TYPE$1;
+            break;
+          case DICTID:
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            strm.adler = state.check = zswap32(hold);
+            hold = 0;
+            bits = 0;
+            state.mode = DICT;
+          case DICT:
+            if (state.havedict === 0) {
+              strm.next_out = put;
+              strm.avail_out = left;
+              strm.next_in = next;
+              strm.avail_in = have;
+              state.hold = hold;
+              state.bits = bits;
+              return Z_NEED_DICT;
+            }
+            strm.adler = state.check = 1;
+            state.mode = TYPE$1;
+          case TYPE$1:
+            if (flush === Z_BLOCK$1 || flush === Z_TREES) {
+              break inf_leave;
+            }
+          case TYPEDO:
+            if (state.last) {
+              hold >>>= bits & 7;
+              bits -= bits & 7;
+              state.mode = CHECK;
+              break;
+            }
+            while (bits < 3) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            state.last = hold & 1;
+            hold >>>= 1;
+            bits -= 1;
+            switch (hold & 3) {
+              case 0:
+                state.mode = STORED;
+                break;
+              case 1:
+                fixedtables(state);
+                state.mode = LEN_;
+                if (flush === Z_TREES) {
+                  hold >>>= 2;
+                  bits -= 2;
+                  break inf_leave;
+                }
+                break;
+              case 2:
+                state.mode = TABLE;
+                break;
+              case 3:
+                strm.msg = "invalid block type";
+                state.mode = BAD$1;
+            }
+            hold >>>= 2;
+            bits -= 2;
+            break;
+          case STORED:
+            hold >>>= bits & 7;
+            bits -= bits & 7;
+            while (bits < 32) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if ((hold & 65535) !== (hold >>> 16 ^ 65535)) {
+              strm.msg = "invalid stored block lengths";
+              state.mode = BAD$1;
+              break;
+            }
+            state.length = hold & 65535;
+            hold = 0;
+            bits = 0;
+            state.mode = COPY_;
+            if (flush === Z_TREES) {
+              break inf_leave;
+            }
+          case COPY_:
+            state.mode = COPY;
+          case COPY:
+            copy = state.length;
+            if (copy) {
+              if (copy > have) {
+                copy = have;
+              }
+              if (copy > left) {
+                copy = left;
+              }
+              if (copy === 0) {
+                break inf_leave;
+              }
+              arraySet(output, input, next, copy, put);
+              have -= copy;
+              next += copy;
+              left -= copy;
+              put += copy;
+              state.length -= copy;
+              break;
+            }
+            state.mode = TYPE$1;
+            break;
+          case TABLE:
+            while (bits < 14) {
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            state.nlen = (hold & 31) + 257;
+            hold >>>= 5;
+            bits -= 5;
+            state.ndist = (hold & 31) + 1;
+            hold >>>= 5;
+            bits -= 5;
+            state.ncode = (hold & 15) + 4;
+            hold >>>= 4;
+            bits -= 4;
+            if (state.nlen > 286 || state.ndist > 30) {
+              strm.msg = "too many length or distance symbols";
+              state.mode = BAD$1;
+              break;
+            }
+            state.have = 0;
+            state.mode = LENLENS;
+          case LENLENS:
+            while (state.have < state.ncode) {
+              while (bits < 3) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              state.lens[order[state.have++]] = hold & 7;
+              hold >>>= 3;
+              bits -= 3;
+            }
+            while (state.have < 19) {
+              state.lens[order[state.have++]] = 0;
+            }
+            state.lencode = state.lendyn;
+            state.lenbits = 7;
+            opts = { bits: state.lenbits };
+            ret = inflate_table(CODES$1, state.lens, 0, 19, state.lencode, 0, state.work, opts);
+            state.lenbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid code lengths set";
+              state.mode = BAD$1;
+              break;
+            }
+            state.have = 0;
+            state.mode = CODELENS;
+          case CODELENS:
+            while (state.have < state.nlen + state.ndist) {
+              for (; ; ) {
+                here = state.lencode[hold & (1 << state.lenbits) - 1];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              if (here_val < 16) {
+                hold >>>= here_bits;
+                bits -= here_bits;
+                state.lens[state.have++] = here_val;
+              } else {
+                if (here_val === 16) {
+                  n = here_bits + 2;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  if (state.have === 0) {
+                    strm.msg = "invalid bit length repeat";
+                    state.mode = BAD$1;
+                    break;
+                  }
+                  len = state.lens[state.have - 1];
+                  copy = 3 + (hold & 3);
+                  hold >>>= 2;
+                  bits -= 2;
+                } else if (here_val === 17) {
+                  n = here_bits + 3;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  len = 0;
+                  copy = 3 + (hold & 7);
+                  hold >>>= 3;
+                  bits -= 3;
+                } else {
+                  n = here_bits + 7;
+                  while (bits < n) {
+                    if (have === 0) {
+                      break inf_leave;
+                    }
+                    have--;
+                    hold += input[next++] << bits;
+                    bits += 8;
+                  }
+                  hold >>>= here_bits;
+                  bits -= here_bits;
+                  len = 0;
+                  copy = 11 + (hold & 127);
+                  hold >>>= 7;
+                  bits -= 7;
+                }
+                if (state.have + copy > state.nlen + state.ndist) {
+                  strm.msg = "invalid bit length repeat";
+                  state.mode = BAD$1;
+                  break;
+                }
+                while (copy--) {
+                  state.lens[state.have++] = len;
+                }
+              }
+            }
+            if (state.mode === BAD$1) {
+              break;
+            }
+            if (state.lens[256] === 0) {
+              strm.msg = "invalid code -- missing end-of-block";
+              state.mode = BAD$1;
+              break;
+            }
+            state.lenbits = 9;
+            opts = { bits: state.lenbits };
+            ret = inflate_table(LENS$1, state.lens, 0, state.nlen, state.lencode, 0, state.work, opts);
+            state.lenbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid literal/lengths set";
+              state.mode = BAD$1;
+              break;
+            }
+            state.distbits = 6;
+            state.distcode = state.distdyn;
+            opts = { bits: state.distbits };
+            ret = inflate_table(DISTS$1, state.lens, state.nlen, state.ndist, state.distcode, 0, state.work, opts);
+            state.distbits = opts.bits;
+            if (ret) {
+              strm.msg = "invalid distances set";
+              state.mode = BAD$1;
+              break;
+            }
+            state.mode = LEN_;
+            if (flush === Z_TREES) {
+              break inf_leave;
+            }
+          case LEN_:
+            state.mode = LEN;
+          case LEN:
+            if (have >= 6 && left >= 258) {
+              strm.next_out = put;
+              strm.avail_out = left;
+              strm.next_in = next;
+              strm.avail_in = have;
+              state.hold = hold;
+              state.bits = bits;
+              inflate_fast(strm, _out);
+              put = strm.next_out;
+              output = strm.output;
+              left = strm.avail_out;
+              next = strm.next_in;
+              input = strm.input;
+              have = strm.avail_in;
+              hold = state.hold;
+              bits = state.bits;
+              if (state.mode === TYPE$1) {
+                state.back = -1;
+              }
+              break;
+            }
+            state.back = 0;
+            for (; ; ) {
+              here = state.lencode[hold & (1 << state.lenbits) - 1];
+              here_bits = here >>> 24;
+              here_op = here >>> 16 & 255;
+              here_val = here & 65535;
+              if (here_bits <= bits) {
+                break;
+              }
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if (here_op && (here_op & 240) === 0) {
+              last_bits = here_bits;
+              last_op = here_op;
+              last_val = here_val;
+              for (; ; ) {
+                here = state.lencode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (last_bits + here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              hold >>>= last_bits;
+              bits -= last_bits;
+              state.back += last_bits;
+            }
+            hold >>>= here_bits;
+            bits -= here_bits;
+            state.back += here_bits;
+            state.length = here_val;
+            if (here_op === 0) {
+              state.mode = LIT;
+              break;
+            }
+            if (here_op & 32) {
+              state.back = -1;
+              state.mode = TYPE$1;
+              break;
+            }
+            if (here_op & 64) {
+              strm.msg = "invalid literal/length code";
+              state.mode = BAD$1;
+              break;
+            }
+            state.extra = here_op & 15;
+            state.mode = LENEXT;
+          case LENEXT:
+            if (state.extra) {
+              n = state.extra;
+              while (bits < n) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              state.length += hold & (1 << state.extra) - 1;
+              hold >>>= state.extra;
+              bits -= state.extra;
+              state.back += state.extra;
+            }
+            state.was = state.length;
+            state.mode = DIST;
+          case DIST:
+            for (; ; ) {
+              here = state.distcode[hold & (1 << state.distbits) - 1];
+              here_bits = here >>> 24;
+              here_op = here >>> 16 & 255;
+              here_val = here & 65535;
+              if (here_bits <= bits) {
+                break;
+              }
+              if (have === 0) {
+                break inf_leave;
+              }
+              have--;
+              hold += input[next++] << bits;
+              bits += 8;
+            }
+            if ((here_op & 240) === 0) {
+              last_bits = here_bits;
+              last_op = here_op;
+              last_val = here_val;
+              for (; ; ) {
+                here = state.distcode[last_val + ((hold & (1 << last_bits + last_op) - 1) >> last_bits)];
+                here_bits = here >>> 24;
+                here_op = here >>> 16 & 255;
+                here_val = here & 65535;
+                if (last_bits + here_bits <= bits) {
+                  break;
+                }
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              hold >>>= last_bits;
+              bits -= last_bits;
+              state.back += last_bits;
+            }
+            hold >>>= here_bits;
+            bits -= here_bits;
+            state.back += here_bits;
+            if (here_op & 64) {
+              strm.msg = "invalid distance code";
+              state.mode = BAD$1;
+              break;
+            }
+            state.offset = here_val;
+            state.extra = here_op & 15;
+            state.mode = DISTEXT;
+          case DISTEXT:
+            if (state.extra) {
+              n = state.extra;
+              while (bits < n) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              state.offset += hold & (1 << state.extra) - 1;
+              hold >>>= state.extra;
+              bits -= state.extra;
+              state.back += state.extra;
+            }
+            if (state.offset > state.dmax) {
+              strm.msg = "invalid distance too far back";
+              state.mode = BAD$1;
+              break;
+            }
+            state.mode = MATCH;
+          case MATCH:
+            if (left === 0) {
+              break inf_leave;
+            }
+            copy = _out - left;
+            if (state.offset > copy) {
+              copy = state.offset - copy;
+              if (copy > state.whave) {
+                if (state.sane) {
+                  strm.msg = "invalid distance too far back";
+                  state.mode = BAD$1;
+                  break;
+                }
+              }
+              if (copy > state.wnext) {
+                copy -= state.wnext;
+                from = state.wsize - copy;
+              } else {
+                from = state.wnext - copy;
+              }
+              if (copy > state.length) {
+                copy = state.length;
+              }
+              from_source = state.window;
+            } else {
+              from_source = output;
+              from = put - state.offset;
+              copy = state.length;
+            }
+            if (copy > left) {
+              copy = left;
+            }
+            left -= copy;
+            state.length -= copy;
+            do {
+              output[put++] = from_source[from++];
+            } while (--copy);
+            if (state.length === 0) {
+              state.mode = LEN;
+            }
+            break;
+          case LIT:
+            if (left === 0) {
+              break inf_leave;
+            }
+            output[put++] = state.length;
+            left--;
+            state.mode = LEN;
+            break;
+          case CHECK:
+            if (state.wrap) {
+              while (bits < 32) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold |= input[next++] << bits;
+                bits += 8;
+              }
+              _out -= left;
+              strm.total_out += _out;
+              state.total += _out;
+              if (_out) {
+                strm.adler = state.check = state.flags ? crc32(state.check, output, _out, put - _out) : adler32(state.check, output, _out, put - _out);
+              }
+              _out = left;
+              if ((state.flags ? hold : zswap32(hold)) !== state.check) {
+                strm.msg = "incorrect data check";
+                state.mode = BAD$1;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            state.mode = LENGTH;
+          case LENGTH:
+            if (state.wrap && state.flags) {
+              while (bits < 32) {
+                if (have === 0) {
+                  break inf_leave;
+                }
+                have--;
+                hold += input[next++] << bits;
+                bits += 8;
+              }
+              if (hold !== (state.total & 4294967295)) {
+                strm.msg = "incorrect length check";
+                state.mode = BAD$1;
+                break;
+              }
+              hold = 0;
+              bits = 0;
+            }
+            state.mode = DONE;
+          case DONE:
+            ret = Z_STREAM_END$2;
+            break inf_leave;
+          case BAD$1:
+            ret = Z_DATA_ERROR$1;
+            break inf_leave;
+          case MEM:
+            return Z_MEM_ERROR;
+          case SYNC:
+          default:
+            return Z_STREAM_ERROR$1;
+        }
+      }
+    strm.next_out = put;
+    strm.avail_out = left;
+    strm.next_in = next;
+    strm.avail_in = have;
+    state.hold = hold;
+    state.bits = bits;
+    if (state.wsize || _out !== strm.avail_out && state.mode < BAD$1 && (state.mode < CHECK || flush !== Z_FINISH$2)) {
+      if (updatewindow(strm, strm.output, strm.next_out, _out - strm.avail_out))
+        ;
+    }
+    _in -= strm.avail_in;
+    _out -= strm.avail_out;
+    strm.total_in += _in;
+    strm.total_out += _out;
+    state.total += _out;
+    if (state.wrap && _out) {
+      strm.adler = state.check = state.flags ? crc32(state.check, output, _out, strm.next_out - _out) : adler32(state.check, output, _out, strm.next_out - _out);
+    }
+    strm.data_type = state.bits + (state.last ? 64 : 0) + (state.mode === TYPE$1 ? 128 : 0) + (state.mode === LEN_ || state.mode === COPY_ ? 256 : 0);
+    if ((_in === 0 && _out === 0 || flush === Z_FINISH$2) && ret === Z_OK$2) {
+      ret = Z_BUF_ERROR$1;
+    }
+    return ret;
+  }
+  function inflateEnd(strm) {
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    var state = strm.state;
+    if (state.window) {
+      state.window = null;
+    }
+    strm.state = null;
+    return Z_OK$2;
+  }
+  function inflateGetHeader(strm, head) {
+    var state;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if ((state.wrap & 2) === 0) {
+      return Z_STREAM_ERROR$1;
+    }
+    state.head = head;
+    head.done = false;
+    return Z_OK$2;
+  }
+  function inflateSetDictionary(strm, dictionary) {
+    var dictLength = dictionary.length;
+    var state;
+    var dictid;
+    var ret;
+    if (!strm || !strm.state) {
+      return Z_STREAM_ERROR$1;
+    }
+    state = strm.state;
+    if (state.wrap !== 0 && state.mode !== DICT) {
+      return Z_STREAM_ERROR$1;
+    }
+    if (state.mode === DICT) {
+      dictid = 1;
+      dictid = adler32(dictid, dictionary, dictLength, 0);
+      if (dictid !== state.check) {
+        return Z_DATA_ERROR$1;
+      }
+    }
+    ret = updatewindow(strm, dictionary, dictLength, dictLength);
+    if (ret) {
+      state.mode = MEM;
+      return Z_MEM_ERROR;
+    }
+    state.havedict = 1;
+    return Z_OK$2;
+  }
+  var constants = {
+    Z_NO_FLUSH: 0,
+    Z_PARTIAL_FLUSH: 1,
+    Z_SYNC_FLUSH: 2,
+    Z_FULL_FLUSH: 3,
+    Z_FINISH: 4,
+    Z_BLOCK: 5,
+    Z_TREES: 6,
+    Z_OK: 0,
+    Z_STREAM_END: 1,
+    Z_NEED_DICT: 2,
+    Z_ERRNO: -1,
+    Z_STREAM_ERROR: -2,
+    Z_DATA_ERROR: -3,
+    Z_BUF_ERROR: -5,
+    Z_NO_COMPRESSION: 0,
+    Z_BEST_SPEED: 1,
+    Z_BEST_COMPRESSION: 9,
+    Z_DEFAULT_COMPRESSION: -1,
+    Z_FILTERED: 1,
+    Z_HUFFMAN_ONLY: 2,
+    Z_RLE: 3,
+    Z_FIXED: 4,
+    Z_DEFAULT_STRATEGY: 0,
+    Z_BINARY: 0,
+    Z_TEXT: 1,
+    Z_UNKNOWN: 2,
+    Z_DEFLATED: 8
+  };
+  function GZheader() {
+    this.text = 0;
+    this.time = 0;
+    this.xflags = 0;
+    this.os = 0;
+    this.extra = null;
+    this.extra_len = 0;
+    this.name = "";
+    this.comment = "";
+    this.hcrc = 0;
+    this.done = false;
+  }
+  var toString$1 = Object.prototype.toString;
+  function Inflate(options) {
+    if (!(this instanceof Inflate))
+      return new Inflate(options);
+    this.options = assign({
+      chunkSize: 16384,
+      windowBits: 0,
+      to: ""
+    }, options || {});
+    var opt = this.options;
+    if (opt.raw && opt.windowBits >= 0 && opt.windowBits < 16) {
+      opt.windowBits = -opt.windowBits;
+      if (opt.windowBits === 0) {
+        opt.windowBits = -15;
+      }
+    }
+    if (opt.windowBits >= 0 && opt.windowBits < 16 && !(options && options.windowBits)) {
+      opt.windowBits += 32;
+    }
+    if (opt.windowBits > 15 && opt.windowBits < 48) {
+      if ((opt.windowBits & 15) === 0) {
+        opt.windowBits |= 15;
+      }
+    }
+    this.err = 0;
+    this.msg = "";
+    this.ended = false;
+    this.chunks = [];
+    this.strm = new ZStream();
+    this.strm.avail_out = 0;
+    var status = inflateInit2(this.strm, opt.windowBits);
+    if (status !== constants.Z_OK) {
+      throw new Error(msg[status]);
+    }
+    this.header = new GZheader();
+    inflateGetHeader(this.strm, this.header);
+  }
+  Inflate.prototype.push = function(data, mode) {
+    var strm = this.strm;
+    var chunkSize = this.options.chunkSize;
+    var dictionary = this.options.dictionary;
+    var status, _mode;
+    var next_out_utf8, tail, utf8str;
+    var dict;
+    var allowBufError = false;
+    if (this.ended) {
+      return false;
+    }
+    _mode = mode === ~~mode ? mode : mode === true ? constants.Z_FINISH : constants.Z_NO_FLUSH;
+    if (typeof data === "string") {
+      strm.input = binstring2buf(data);
+    } else if (toString$1.call(data) === "[object ArrayBuffer]") {
+      strm.input = new Uint8Array(data);
+    } else {
+      strm.input = data;
+    }
+    strm.next_in = 0;
+    strm.avail_in = strm.input.length;
+    do {
+      if (strm.avail_out === 0) {
+        strm.output = new Buf8(chunkSize);
+        strm.next_out = 0;
+        strm.avail_out = chunkSize;
+      }
+      status = inflate(strm, constants.Z_NO_FLUSH);
+      if (status === constants.Z_NEED_DICT && dictionary) {
+        if (typeof dictionary === "string") {
+          dict = string2buf(dictionary);
+        } else if (toString$1.call(dictionary) === "[object ArrayBuffer]") {
+          dict = new Uint8Array(dictionary);
+        } else {
+          dict = dictionary;
+        }
+        status = inflateSetDictionary(this.strm, dict);
+      }
+      if (status === constants.Z_BUF_ERROR && allowBufError === true) {
+        status = constants.Z_OK;
+        allowBufError = false;
+      }
+      if (status !== constants.Z_STREAM_END && status !== constants.Z_OK) {
+        this.onEnd(status);
+        this.ended = true;
+        return false;
+      }
+      if (strm.next_out) {
+        if (strm.avail_out === 0 || status === constants.Z_STREAM_END || strm.avail_in === 0 && (_mode === constants.Z_FINISH || _mode === constants.Z_SYNC_FLUSH)) {
+          if (this.options.to === "string") {
+            next_out_utf8 = utf8border(strm.output, strm.next_out);
+            tail = strm.next_out - next_out_utf8;
+            utf8str = buf2string(strm.output, next_out_utf8);
+            strm.next_out = tail;
+            strm.avail_out = chunkSize - tail;
+            if (tail) {
+              arraySet(strm.output, strm.output, next_out_utf8, tail, 0);
+            }
+            this.onData(utf8str);
+          } else {
+            this.onData(shrinkBuf(strm.output, strm.next_out));
+          }
+        }
+      }
+      if (strm.avail_in === 0 && strm.avail_out === 0) {
+        allowBufError = true;
+      }
+    } while ((strm.avail_in > 0 || strm.avail_out === 0) && status !== constants.Z_STREAM_END);
+    if (status === constants.Z_STREAM_END) {
+      _mode = constants.Z_FINISH;
+    }
+    if (_mode === constants.Z_FINISH) {
+      status = inflateEnd(this.strm);
+      this.onEnd(status);
+      this.ended = true;
+      return status === constants.Z_OK;
+    }
+    if (_mode === constants.Z_SYNC_FLUSH) {
+      this.onEnd(constants.Z_OK);
+      strm.avail_out = 0;
+      return true;
+    }
+    return true;
+  };
+  Inflate.prototype.onData = function(chunk) {
+    this.chunks.push(chunk);
+  };
+  Inflate.prototype.onEnd = function(status) {
+    if (status === constants.Z_OK) {
+      if (this.options.to === "string") {
+        this.result = this.chunks.join("");
+      } else {
+        this.result = flattenChunks(this.chunks);
+      }
+    }
+    this.chunks = [];
+    this.err = status;
+    this.msg = this.strm.msg;
+  };
+  function inflate$1(input, options) {
+    var inflator = new Inflate(options);
+    inflator.push(input, true);
+    if (inflator.err) {
+      throw inflator.msg || msg[inflator.err];
+    }
+    return inflator.result;
+  }
+  function inflateRaw(input, options) {
+    options = options || {};
+    options.raw = true;
+    return inflate$1(input, options);
+  }
+  var inflate$2 = /* @__PURE__ */ Object.freeze({
+    Inflate,
+    inflate: inflate$1,
+    inflateRaw,
+    ungzip: inflate$1
+  });
+  var pako = {};
+  assign(pako, deflate$2, inflate$2, constants);
+  var pako_es_default = pako;
+
+  // esm/btree.js
+  var zlib = {
+    decompress: function(buf) {
+      let input_array = new Uint8Array(buf);
+      return pako_es_default.inflate(input_array).buffer;
+    }
+  };
+  var AbstractBTree = class {
+    constructor(fh, offset) {
+      this.fh = fh;
+      this.offset = offset;
+      this.depth = null;
+    }
+    init() {
+      this.all_nodes = /* @__PURE__ */ new Map();
+      this._read_root_node();
+      this._read_children();
+    }
+    _read_children() {
+      let node_level = this.depth;
+      while (node_level > 0) {
+        for (var parent_node of this.all_nodes.get(node_level)) {
+          for (var child_addr of parent_node.get("addresses")) {
+            this._add_node(this._read_node(child_addr, node_level - 1));
+          }
+        }
+        node_level--;
+      }
+    }
+    _read_root_node() {
+      let root_node = this._read_node(this.offset, null);
+      this._add_node(root_node);
+      this.depth = root_node.get("node_level");
+    }
+    _add_node(node2) {
+      let node_level = node2.get("node_level");
+      if (this.all_nodes.has(node_level)) {
+        this.all_nodes.get(node_level).push(node2);
+      } else {
+        this.all_nodes.set(node_level, [node2]);
+      }
+    }
+    _read_node(offset, node_level) {
+      node = this._read_node_header(offset, node_level);
+      node.set("keys", []);
+      node.set("addresses", []);
+      return node;
+    }
+    _read_node_header(offset) {
+      throw "NotImplementedError: must define _read_node_header in implementation class";
+    }
+  };
+  var BTreeV1 = class extends AbstractBTree {
+    B_LINK_NODE = /* @__PURE__ */ new Map([
+      ["signature", "4s"],
+      ["node_type", "B"],
+      ["node_level", "B"],
+      ["entries_used", "H"],
+      ["left_sibling", "Q"],
+      ["right_sibling", "Q"]
+    ]);
+    _read_node_header(offset, node_level) {
+      let node2 = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
+      if (node_level != null) {
+        if (node2.get("node_level") != node_level) {
+          throw "node level does not match";
+        }
+      }
+      return node2;
+    }
+  };
+  var BTreeV1Groups = class extends BTreeV1 {
+    NODE_TYPE = 0;
+    constructor(fh, offset) {
+      super(fh, offset);
+      this.init();
+    }
+    _read_node(offset, node_level) {
+      let node2 = this._read_node_header(offset, node_level);
+      offset += _structure_size(this.B_LINK_NODE);
+      let keys = [];
+      let addresses = [];
+      let entries_used = node2.get("entries_used");
+      for (var i = 0; i < entries_used; i++) {
+        let key = struct.unpack_from("<Q", this.fh, offset)[0];
+        offset += 8;
+        let address = struct.unpack_from("<Q", this.fh, offset)[0];
+        offset += 8;
+        keys.push(key);
+        addresses.push(address);
+      }
+      keys.push(struct.unpack_from("<Q", this.fh, offset)[0]);
+      node2.set("keys", keys);
+      node2.set("addresses", addresses);
+      return node2;
+    }
+    symbol_table_addresses() {
+      var all_address = [];
+      var root_nodes = this.all_nodes.get(0);
+      for (var node2 of root_nodes) {
+        all_address = all_address.concat(node2.get("addresses"));
+      }
+      return all_address;
+    }
+  };
+  var BTreeV1RawDataChunks = class extends BTreeV1 {
+    NODE_TYPE = 1;
+    constructor(fh, offset, dims) {
+      super(fh, offset);
+      this.dims = dims;
+      this.init();
+    }
+    _read_node(offset, node_level) {
+      let node2 = this._read_node_header(offset, node_level);
+      offset += _structure_size(this.B_LINK_NODE);
+      var keys = [];
+      var addresses = [];
+      let entries_used = node2.get("entries_used");
+      for (var i = 0; i < entries_used; i++) {
+        let [chunk_size, filter_mask] = struct.unpack_from("<II", this.fh, offset);
+        offset += 8;
+        let fmt = "<" + this.dims.toFixed() + "Q";
+        let fmt_size = struct.calcsize(fmt);
+        let chunk_offset = struct.unpack_from(fmt, this.fh, offset);
+        offset += fmt_size;
+        let chunk_address = struct.unpack_from("<Q", this.fh, offset)[0];
+        offset += 8;
+        keys.push(/* @__PURE__ */ new Map([
+          ["chunk_size", chunk_size],
+          ["filter_mask", filter_mask],
+          ["chunk_offset", chunk_offset]
+        ]));
+        addresses.push(chunk_address);
+      }
+      node2.set("keys", keys);
+      node2.set("addresses", addresses);
+      return node2;
+    }
+    construct_data_from_chunks(chunk_shape, data_shape, dtype, filter_pipeline) {
+      var true_dtype;
+      var item_getter, item_big_endian, item_size;
+      if (dtype instanceof Array) {
+        true_dtype = dtype;
+        let dtype_class = dtype[0];
+        if (dtype_class == "REFERENCE") {
+          let size = dtype[1];
+          if (size != 8) {
+            throw "NotImplementedError('Unsupported Reference type')";
+          }
+          var dtype = "<u8";
+          item_getter = "getUint64";
+          item_big_endian = false;
+          item_size = 8;
+        } else if (dtype_class == "VLEN_STRING" || dtype_class == "VLEN_SEQUENCE") {
+          item_getter = "getVLENStruct";
+          item_big_endian = false;
+          item_size = 16;
+        } else {
+          throw "NotImplementedError('datatype not implemented')";
+        }
+      } else {
+        true_dtype = null;
+        [item_getter, item_big_endian, item_size] = dtype_getter(dtype);
+      }
+      var data_size = data_shape.reduce(function(a, b) {
+        return a * b;
+      }, 1);
+      var chunk_size = chunk_shape.reduce(function(a, b) {
+        return a * b;
+      }, 1);
+      let dims = data_shape.length;
+      var current_stride = 1;
+      var chunk_strides = chunk_shape.slice().map(function(d2) {
+        let s = current_stride;
+        current_stride *= d2;
+        return s;
+      });
+      var current_stride = 1;
+      var data_strides = data_shape.slice().reverse().map(function(d2) {
+        let s = current_stride;
+        current_stride *= d2;
+        return s;
+      }).reverse();
+      var data = new Array(data_size);
+      let chunk_buffer_size = chunk_size * item_size;
+      for (var node2 of this.all_nodes.get(0)) {
+        let node_keys = node2.get("keys");
+        let node_addresses = node2.get("addresses");
+        let nkeys = node_keys.length;
+        for (var ik = 0; ik < nkeys; ik++) {
+          let node_key = node_keys[ik];
+          let addr = node_addresses[ik];
+          var chunk_buffer;
+          if (filter_pipeline == null) {
+            chunk_buffer = this.fh.slice(addr, addr + chunk_buffer_size);
+          } else {
+            chunk_buffer = this.fh.slice(addr, addr + node_key.get("chunk_size"));
+            let filter_mask = node_key.get("filter_mask");
+            chunk_buffer = this._filter_chunk(chunk_buffer, filter_mask, filter_pipeline, item_size);
+          }
+          var chunk_offset = node_key.get("chunk_offset").slice();
+          var apos = chunk_offset.slice();
+          var cpos = apos.map(function() {
+            return 0;
+          });
+          var cview = new DataView64(chunk_buffer);
+          for (var ci = 0; ci < chunk_size; ci++) {
+            for (var d = dims - 1; d >= 0; d--) {
+              if (cpos[d] >= chunk_shape[d]) {
+                cpos[d] = 0;
+                apos[d] = chunk_offset[d];
+                if (d > 0) {
+                  cpos[d - 1] += 1;
+                  apos[d - 1] += 1;
+                }
+              } else {
+                break;
+              }
+            }
+            let inbounds = apos.slice(0, -1).every(function(p, d2) {
+              return p < data_shape[d2];
+            });
+            if (inbounds) {
+              let cb_offset = ci * item_size;
+              let datum = cview[item_getter](cb_offset, !item_big_endian, item_size);
+              let ai = apos.slice(0, -1).reduce(function(prev, curr, index) {
+                return curr * data_strides[index] + prev;
+              }, 0);
+              data[ai] = datum;
+            }
+            cpos[dims - 1] += 1;
+            apos[dims - 1] += 1;
+          }
+        }
+      }
+      return data;
+    }
+    _filter_chunk(chunk_buffer, filter_mask, filter_pipeline, itemsize) {
+      let num_filters = filter_pipeline.length;
+      var chunk_buffer_out = chunk_buffer.slice();
+      for (var filter_index = num_filters - 1; filter_index >= 0; filter_index--) {
+        if (filter_mask & 1 << filter_index) {
+          continue;
+        }
+        let pipeline_entry = filter_pipeline[filter_index];
+        let filter_id = pipeline_entry.get("filter_id");
+        if (filter_id == GZIP_DEFLATE_FILTER) {
+          chunk_buffer_out = zlib.decompress(chunk_buffer_out);
+        } else if (filter_id == SHUFFLE_FILTER) {
+          let buffer_size = chunk_buffer_out.byteLength;
+          var unshuffled_view = new Uint8Array(buffer_size);
+          let step = Math.floor(buffer_size / itemsize);
+          let shuffled_view = new DataView(chunk_buffer_out);
+          for (var j = 0; j < itemsize; j++) {
+            for (var i = 0; i < step; i++) {
+              unshuffled_view[j + i * itemsize] = shuffled_view.getUint8(j * step + i);
+            }
+          }
+          chunk_buffer_out = unshuffled_view.buffer;
+        } else if (filter_id == FLETCH32_FILTER) {
+          _verify_fletcher32(chunk_buffer_out);
+          chunk_buffer_out = chunk_buffer_out.slice(0, -4);
+        } else {
+          throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
+        }
+      }
+      return chunk_buffer_out;
+    }
+  };
+  var BTreeV2 = class extends AbstractBTree {
+    B_TREE_HEADER = /* @__PURE__ */ new Map([
+      ["signature", "4s"],
+      ["version", "B"],
+      ["node_type", "B"],
+      ["node_size", "I"],
+      ["record_size", "H"],
+      ["depth", "H"],
+      ["split_percent", "B"],
+      ["merge_percent", "B"],
+      ["root_address", "Q"],
+      ["root_nrecords", "H"],
+      ["total_nrecords", "Q"]
+    ]);
+    B_LINK_NODE = /* @__PURE__ */ new Map([
+      ["signature", "4s"],
+      ["version", "B"],
+      ["node_type", "B"]
+    ]);
+    constructor(fh, offset) {
+      super(fh, offset);
+      this.init();
+    }
+    _read_root_node() {
+      let h = this._read_tree_header(this.offset);
+      this.address_formats = this._calculate_address_formats(h);
+      this.header = h;
+      this.depth = h.get("depth");
+      let address = [h.get("root_address"), h.get("root_nrecords"), h.get("total_nrecords")];
+      let root_node = this._read_node(address, this.depth);
+      this._add_node(root_node);
+    }
+    _read_tree_header(offset) {
+      let header = _unpack_struct_from(this.B_TREE_HEADER, this.fh, this.offset);
+      return header;
+    }
+    _calculate_address_formats(header) {
+      let node_size = header.get("node_size");
+      let record_size = header.get("record_size");
+      let nrecords_max = 0;
+      let ntotalrecords_max = 0;
+      let address_formats = /* @__PURE__ */ new Map();
+      let max_depth = header.get("depth");
+      for (var node_level = 0; node_level <= max_depth; node_level++) {
+        let offset_fmt = "";
+        let num1_fmt = "";
+        let num2_fmt = "";
+        let offset_size, num1_size, num2_size;
+        if (node_level == 0) {
+          offset_size = 0;
+          num1_size = 0;
+          num2_size = 0;
+        } else if (node_level == 1) {
+          offset_size = 8;
+          offset_fmt = "<Q";
+          num1_size = this._required_bytes(nrecords_max);
+          num1_fmt = this._int_format(num1_size);
+          num2_size = 0;
+        } else {
+          offset_size = 8;
+          offset_fmt = "<Q";
+          num1_size = this._required_bytes(nrecords_max);
+          num1_fmt = this._int_format(num1_size);
+          num2_size = this._required_bytes(ntotalrecords_max);
+          num2_fmt = this._int_format(num2_size);
+        }
+        address_formats.set(node_level, [
+          offset_size,
+          num1_size,
+          num2_size,
+          offset_fmt,
+          num1_fmt,
+          num2_fmt
+        ]);
+        if (node_level < max_depth) {
+          let addr_size = offset_size + num1_size + num2_size;
+          nrecords_max = this._nrecords_max(node_size, record_size, addr_size);
+          if (ntotalrecords_max > 0) {
+            ntotalrecords_max *= nrecords_max;
+          } else {
+            ntotalrecords_max = nrecords_max;
+          }
+        }
+      }
+      return address_formats;
+    }
+    _nrecords_max(node_size, record_size, addr_size) {
+      return Math.floor((node_size - 10 - addr_size) / (record_size + addr_size));
+    }
+    _required_bytes(integer) {
+      return Math.ceil(bitSize(integer) / 8);
+    }
+    _int_format(bytelength) {
+      return ["<B", "<H", "<I", "<Q"][bytelength - 1];
+    }
+    _read_node(address, node_level) {
+      let [offset, nrecords, ntotalrecords] = address;
+      let node2 = this._read_node_header(offset, node_level);
+      offset += _structure_size(this.B_LINK_NODE);
+      let record_size = this.header.get("record_size");
+      let keys = [];
+      for (let i = 0; i < nrecords; i++) {
+        let record = this._parse_record(this.fh, offset, record_size);
+        offset += record_size;
+        keys.push(record);
+      }
+      let addresses = [];
+      let fmts = this.address_formats.get(node_level);
+      if (node_level != 0) {
+        let [offset_size, num1_size, num2_size, offset_fmt, num1_fmt, num2_fmt] = fmts;
+        for (let j = 0; j <= nrecords; j++) {
+          let address_offset = struct.unpack_from(offset_fmt, this.fh, offset)[0];
+          offset += offset_size;
+          let num1 = struct.unpack_from(num1_fmt, this.fh, offset)[0];
+          offset += num1_size;
+          let num2 = num1;
+          if (num2_size > 0) {
+            num2 = struct.unpack_from(num2_fmt, this.fh, offset)[0];
+          }
+          addresses.push([address_offset, num1, num2]);
+        }
+      }
+      node2.set("keys", keys);
+      node2.set("addresses", addresses);
+      return node2;
+    }
+    _read_node_header(offset, node_level) {
+      let node2 = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
+      if (node_level > 0) {
+      } else {
+      }
+      node2.set("node_level", node_level);
+      return node2;
+    }
+    *iter_records() {
+      for (let nodelist of this.all_nodes.values()) {
+        for (let node2 of nodelist) {
+          for (let key of node2.get("keys")) {
+            yield key;
+          }
+        }
+      }
+    }
+    _parse_record(record) {
+      throw "NotImplementedError";
+    }
+  };
+  var BTreeV2GroupNames = class extends BTreeV2 {
+    NODE_TYPE = 5;
+    _parse_record(buf, offset, size) {
+      let namehash = struct.unpack_from("<I", buf, offset)[0];
+      offset += 4;
+      return /* @__PURE__ */ new Map([["namehash", namehash], ["heapid", buf.slice(offset, offset + 7)]]);
+    }
+  };
+  var BTreeV2GroupOrders = class extends BTreeV2 {
+    NODE_TYPE = 6;
+    _parse_record(buf, offset, size) {
+      let creationorder = struct.unpack_from("<Q", buf, offset)[0];
+      offset += 8;
+      return /* @__PURE__ */ new Map([["creationorder", creationorder], ["heapid", buf.slice(offset, offset + 7)]]);
+    }
+  };
+  function _verify_fletcher32(chunk_buffer) {
+    var odd_chunk_buffer = chunk_buffer.byteLength % 2 != 0;
+    var data_length = chunk_buffer.byteLength - 4;
+    var view = new DataView64(chunk_buffer);
+    var sum1 = 0;
+    var sum2 = 0;
+    for (var offset = 0; offset < data_length - 1; offset += 2) {
+      let datum = view.getUint16(offset, true);
+      sum1 = (sum1 + datum) % 65535;
+      sum2 = (sum2 + sum1) % 65535;
+    }
+    if (odd_chunk_buffer) {
+      let datum = view.getUint8(data_length - 1);
+      sum1 = (sum1 + datum) % 65535;
+      sum2 = (sum2 + sum1) % 65535;
+    }
+    var [ref_sum1, ref_sum2] = struct.unpack_from(">HH", chunk_buffer, data_length);
+    ref_sum1 = ref_sum1 % 65535;
+    ref_sum2 = ref_sum2 % 65535;
+    if (sum1 != ref_sum1 || sum2 != ref_sum2) {
+      throw 'ValueError("fletcher32 checksum invalid")';
+    }
+    return true;
+  }
+  var GZIP_DEFLATE_FILTER = 1;
+  var SHUFFLE_FILTER = 2;
+  var FLETCH32_FILTER = 3;
+
+  // esm/misc-low-level.js
+  var SuperBlock = class {
+    constructor(fh, offset) {
+      let version_hint = struct.unpack_from("<B", fh, offset + 8);
+      var contents;
+      if (version_hint == 0) {
+        contents = _unpack_struct_from(SUPERBLOCK_V0, fh, offset);
+        this._end_of_sblock = offset + SUPERBLOCK_V0_SIZE;
+      } else if (version_hint == 2 || version_hint == 3) {
+        contents = _unpack_struct_from(SUPERBLOCK_V2_V3, fh, offset);
+        this._end_of_sblock = offset + SUPERBLOCK_V2_V3_SIZE;
+      } else {
+        throw "unsupported superblock version: " + version_hint.toFixed();
+      }
+      if (contents.get("format_signature") != FORMAT_SIGNATURE) {
+        throw "Incorrect file signature: " + contents.get("format_signature");
+      }
+      if (contents.get("offset_size") != 8 || contents.get("length_size") != 8) {
+        throw "File uses non-64-bit addressing";
+      }
+      this.version = contents.get("superblock_version");
+      this._contents = contents;
+      this._root_symbol_table = null;
+      this._fh = fh;
+    }
+    get offset_to_dataobjects() {
+      if (this.version == 0) {
+        var sym_table = new SymbolTable(this._fh, this._end_of_sblock, true);
+        this._root_symbol_table = sym_table;
+        return sym_table.group_offset;
+      } else if (this.version == 2 || this.version == 3) {
+        return this._contents.get("root_group_address");
+      } else {
+        throw "Not implemented version = " + this.version.toFixed();
+      }
+    }
+  };
+  var Heap = class {
+    constructor(fh, offset) {
+      let local_heap = _unpack_struct_from(LOCAL_HEAP, fh, offset);
+      assert(local_heap.get("signature") == "HEAP");
+      assert(local_heap.get("version") == 0);
+      let data_offset = local_heap.get("address_of_data_segment");
+      let heap_data = fh.slice(data_offset, data_offset + local_heap.get("data_segment_size"));
+      local_heap.set("heap_data", heap_data);
+      this._contents = local_heap;
+      this.data = heap_data;
+    }
+    get_object_name(offset) {
+      let end = new Uint8Array(this.data).indexOf(0, offset);
+      let name_size = end - offset;
+      let name = struct.unpack_from("<" + name_size.toFixed() + "s", this.data, offset)[0];
+      return name;
+    }
+  };
+  var SymbolTable = class {
+    constructor(fh, offset, root = false) {
+      var node2;
+      if (root) {
+        node2 = /* @__PURE__ */ new Map([["symbols", 1]]);
+      } else {
+        node2 = _unpack_struct_from(SYMBOL_TABLE_NODE, fh, offset);
+        if (node2.get("signature") != "SNOD") {
+          throw "incorrect node type";
+        }
+        offset += SYMBOL_TABLE_NODE_SIZE;
+      }
+      var entries = [];
+      var n_symbols = node2.get("symbols");
+      for (var i = 0; i < n_symbols; i++) {
+        entries.push(_unpack_struct_from(SYMBOL_TABLE_ENTRY, fh, offset));
+        offset += SYMBOL_TABLE_ENTRY_SIZE;
+      }
+      if (root) {
+        this.group_offset = entries[0].get("object_header_address");
+      }
+      this.entries = entries;
+      this._contents = node2;
+    }
+    assign_name(heap) {
+      this.entries.forEach(function(entry) {
+        let offset = entry.get("link_name_offset");
+        let link_name = heap.get_object_name(offset);
+        entry.set("link_name", link_name);
+      });
+    }
+    get_links(heap) {
+      var links = {};
+      this.entries.forEach(function(e) {
+        let cache_type = e.get("cache_type");
+        let link_name = e.get("link_name");
+        if (cache_type == 0 || cache_type == 1) {
+          links[link_name] = e.get("object_header_address");
+        } else if (cache_type == 2) {
+          let scratch = e.get("scratch");
+          let buf = new ArrayBuffer(4);
+          let bufView = new Uint8Array(buf);
+          for (var i = 0; i < 4; i++) {
+            bufView[i] = scratch.charCodeAt(i);
+          }
+          let offset = struct.unpack_from("<I", buf, 0)[0];
+          links[link_name] = heap.get_object_name(offset);
+        }
+      });
+      return links;
+    }
+  };
+  var GlobalHeap = class {
+    constructor(fh, offset) {
+      let header = _unpack_struct_from(GLOBAL_HEAP_HEADER, fh, offset);
+      offset += GLOBAL_HEAP_HEADER_SIZE;
+      let heap_data_size = header.get("collection_size") - GLOBAL_HEAP_HEADER_SIZE;
+      let heap_data = fh.slice(offset, offset + heap_data_size);
+      this.heap_data = heap_data;
+      this._header = header;
+      this._objects = null;
+    }
+    get objects() {
+      if (this._objects == null) {
+        this._objects = /* @__PURE__ */ new Map();
+        var offset = 0;
+        while (offset <= this.heap_data.byteLength - GLOBAL_HEAP_OBJECT_SIZE) {
+          let info = _unpack_struct_from(GLOBAL_HEAP_OBJECT, this.heap_data, offset);
+          if (info.get("object_index") == 0) {
+            break;
+          }
+          offset += GLOBAL_HEAP_OBJECT_SIZE;
+          let obj_data = this.heap_data.slice(offset, offset + info.get("object_size"));
+          this._objects.set(info.get("object_index"), obj_data);
+          offset += _padded_size(info.get("object_size"));
+        }
+      }
+      return this._objects;
+    }
+  };
+  var FractalHeap = class {
+    constructor(fh, offset) {
+      this.fh = fh;
+      let header = _unpack_struct_from(FRACTAL_HEAP_HEADER, fh, offset);
+      offset += _structure_size(FRACTAL_HEAP_HEADER);
+      assert(header.get("signature") == "FRHP");
+      assert(header.get("version") == 0);
+      if (header.get("filter_info_size") > 0) {
+        throw "Filter info size not supported on FractalHeap";
+      }
+      if (header.get("btree_address_huge_objects") == UNDEFINED_ADDRESS) {
+        header.set("btree_address_huge_objects", null);
+      } else {
+        throw "Huge objects not implemented in FractalHeap";
+      }
+      if (header.get("root_block_address") == UNDEFINED_ADDRESS) {
+        header.set("root_block_address", null);
+      }
+      let nbits = header.get("log2_maximum_heap_size");
+      let block_offset_size = this._min_size_nbits(nbits);
+      let h = /* @__PURE__ */ new Map([
+        ["signature", "4s"],
+        ["version", "B"],
+        ["heap_header_adddress", "Q"],
+        ["block_offset", `${block_offset_size}B`]
+      ]);
+      this.indirect_block_header = new Map(h);
+      this.indirect_block_header_size = _structure_size(h);
+      if ((header.get("flags") & 2) == 2) {
+        h.set("checksum", "I");
+      }
+      this.direct_block_header = h;
+      this.direct_block_header_size = _structure_size(h);
+      let maximum_dblock_size = header.get("maximum_direct_block_size");
+      this._managed_object_offset_size = this._min_size_nbits(nbits);
+      let value = Math.min(maximum_dblock_size, header.get("max_managed_object_size"));
+      this._managed_object_length_size = this._min_size_integer(value);
+      let start_block_size = header.get("starting_block_size");
+      let table_width = header.get("table_width");
+      if (!(start_block_size > 0)) {
+        throw "Starting block size == 0 not implemented";
+      }
+      let log2_maximum_dblock_size = Number(Math.floor(Math.log2(maximum_dblock_size)));
+      assert(1n << BigInt(log2_maximum_dblock_size) == maximum_dblock_size);
+      let log2_start_block_size = Number(Math.floor(Math.log2(start_block_size)));
+      assert(1n << BigInt(log2_start_block_size) == start_block_size);
+      this._max_direct_nrows = log2_maximum_dblock_size - log2_start_block_size + 2;
+      let log2_table_width = Math.floor(Math.log2(table_width));
+      assert(1 << log2_table_width == table_width);
+      this._indirect_nrows_sub = log2_table_width + log2_start_block_size - 1;
+      this.header = header;
+      this.nobjects = header.get("managed_object_count") + header.get("huge_object_count") + header.get("tiny_object_count");
+      let managed = [];
+      let root_address = header.get("root_block_address");
+      let nrows = 0;
+      if (root_address != null) {
+        nrows = header.get("indirect_current_rows_count");
+      }
+      if (nrows > 0) {
+        for (let data of this._iter_indirect_block(fh, root_address, nrows)) {
+          managed.push(data);
+        }
+      } else {
+        let data = this._read_direct_block(fh, root_address, start_block_size);
+        managed.push(data);
+      }
+      let data_size = managed.reduce((p, c) => p + c.byteLength, 0);
+      let combined = new Uint8Array(data_size);
+      let moffset = 0;
+      managed.forEach((m) => {
+        combined.set(new Uint8Array(m), moffset);
+        moffset += m.byteLength;
+      });
+      this.managed = combined.buffer;
+    }
+    _read_direct_block(fh, offset, block_size) {
+      let data = fh.slice(offset, offset + block_size);
+      let header = _unpack_struct_from(this.direct_block_header, data);
+      assert(header.get("signature") == "FHDB");
+      return data;
+    }
+    get_data(heapid) {
+      let firstbyte = struct.unpack_from("<B", heapid, 0)[0];
+      let reserved = firstbyte & 15;
+      let idtype = firstbyte >> 4 & 3;
+      let version = firstbyte >> 6;
+      let data_offset = 1;
+      if (idtype == 0) {
+        assert(version == 0);
+        let nbytes = this._managed_object_offset_size;
+        let offset = _unpack_integer(nbytes, heapid, data_offset);
+        data_offset += nbytes;
+        nbytes = this._managed_object_length_size;
+        let size = _unpack_integer(nbytes, heapid, data_offset);
+        return this.managed.slice(offset, offset + size);
+      } else if (idtype == 1) {
+        throw "tiny objectID not supported in FractalHeap";
+      } else if (idtype == 2) {
+        throw "huge objectID not supported in FractalHeap";
+      } else {
+        throw "unknown objectID type in FractalHeap";
+      }
+    }
+    _min_size_integer(integer) {
+      return this._min_size_nbits(bitSize(integer));
+    }
+    _min_size_nbits(nbits) {
+      return Math.ceil(nbits / 8);
+    }
+    *_iter_indirect_block(fh, offset, nrows) {
+      let header = _unpack_struct_from(this.indirect_block_header, fh, offset);
+      offset += this.indirect_block_header_size;
+      assert(header.get("signature") == "FHIB");
+      let block_offset_bytes = header.get("block_offset");
+      let block_offset = block_offset_bytes.reduce((p, c, i) => p + (c << i * 8), 0);
+      header.set("block_offset", block_offset);
+      let [ndirect, nindirect] = this._indirect_info(nrows);
+      let direct_blocks = [];
+      for (let i = 0; i < ndirect; i++) {
+        let address = struct.unpack_from("<Q", fh, offset)[0];
+        offset += 8;
+        if (address == UNDEFINED_ADDRESS) {
+          break;
+        }
+        let block_size = this._calc_block_size(i);
+        direct_blocks.push([address, block_size]);
+      }
+      let indirect_blocks = [];
+      for (let i = ndirect; i < ndirect + nindirect; i++) {
+        let address = struct.unpack_from("<Q", fh, offset)[0];
+        offset += 8;
+        if (address == UNDEFINED_ADDRESS) {
+          break;
+        }
+        let block_size = this._calc_block_size(i);
+        let nrows2 = this._iblock_nrows_from_block_size(block_size);
+        indirect_blocks.push([address, nrows2]);
+      }
+      for (let [address, block_size] of direct_blocks) {
+        let obj = this._read_direct_block(fh, address, block_size);
+        yield obj;
+      }
+      for (let [address, nrows2] of indirect_blocks) {
+        for (let obj of this._iter_indirect_block(fh, address, nrows2)) {
+          yield obj;
+        }
+      }
+    }
+    _calc_block_size(iblock) {
+      let row = Math.floor(iblock / this.header.get("table_width"));
+      return 2 ** Math.max(row - 1, 0) * this.header.get("starting_block_size");
+    }
+    _iblock_nrows_from_block_size(block_size) {
+      let log2_block_size = Math.floor(Math.log2(block_size));
+      assert(2 ** log2_block_size == block_size);
+      return log2_block_size - this._indirect_nrows_sub;
+    }
+    _indirect_info(nrows) {
+      let table_width = this.header.get("table_width");
+      let nobjects = nrows * table_width;
+      let ndirect_max = this._max_direct_nrows * table_width;
+      let ndirect, nindirect;
+      if (nrows <= ndirect_max) {
+        ndirect = nobjects;
+        nindirect = 0;
+      } else {
+        ndirect = ndirect_max;
+        nindirect = nobjects - ndirect_max;
+      }
+      return [ndirect, nindirect];
+    }
+    _int_format(bytelength) {
+      return ["B", "H", "I", "Q"][bytelength - 1];
+    }
+  };
+  var FORMAT_SIGNATURE = struct.unpack_from("8s", new Uint8Array([137, 72, 68, 70, 13, 10, 26, 10]).buffer)[0];
+  var UNDEFINED_ADDRESS = struct.unpack_from("<Q", new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255]).buffer)[0];
+  var SUPERBLOCK_V0 = /* @__PURE__ */ new Map([
+    ["format_signature", "8s"],
+    ["superblock_version", "B"],
+    ["free_storage_version", "B"],
+    ["root_group_version", "B"],
+    ["reserved_0", "B"],
+    ["shared_header_version", "B"],
+    ["offset_size", "B"],
+    ["length_size", "B"],
+    ["reserved_1", "B"],
+    ["group_leaf_node_k", "H"],
+    ["group_internal_node_k", "H"],
+    ["file_consistency_flags", "L"],
+    ["base_address_lower", "Q"],
+    ["free_space_address", "Q"],
+    ["end_of_file_address", "Q"],
+    ["driver_information_address", "Q"]
+  ]);
+  var SUPERBLOCK_V0_SIZE = _structure_size(SUPERBLOCK_V0);
+  var SUPERBLOCK_V2_V3 = /* @__PURE__ */ new Map([
+    ["format_signature", "8s"],
+    ["superblock_version", "B"],
+    ["offset_size", "B"],
+    ["length_size", "B"],
+    ["file_consistency_flags", "B"],
+    ["base_address", "Q"],
+    ["superblock_extension_address", "Q"],
+    ["end_of_file_address", "Q"],
+    ["root_group_address", "Q"],
+    ["superblock_checksum", "I"]
+  ]);
+  var SUPERBLOCK_V2_V3_SIZE = _structure_size(SUPERBLOCK_V2_V3);
+  var SYMBOL_TABLE_ENTRY = /* @__PURE__ */ new Map([
+    ["link_name_offset", "Q"],
+    ["object_header_address", "Q"],
+    ["cache_type", "I"],
+    ["reserved", "I"],
+    ["scratch", "16s"]
+  ]);
+  var SYMBOL_TABLE_ENTRY_SIZE = _structure_size(SYMBOL_TABLE_ENTRY);
+  var SYMBOL_TABLE_NODE = /* @__PURE__ */ new Map([
+    ["signature", "4s"],
+    ["version", "B"],
+    ["reserved_0", "B"],
+    ["symbols", "H"]
+  ]);
+  var SYMBOL_TABLE_NODE_SIZE = _structure_size(SYMBOL_TABLE_NODE);
+  var LOCAL_HEAP = /* @__PURE__ */ new Map([
+    ["signature", "4s"],
+    ["version", "B"],
+    ["reserved", "3s"],
+    ["data_segment_size", "Q"],
+    ["offset_to_free_list", "Q"],
+    ["address_of_data_segment", "Q"]
+  ]);
+  var GLOBAL_HEAP_HEADER = /* @__PURE__ */ new Map([
+    ["signature", "4s"],
+    ["version", "B"],
+    ["reserved", "3s"],
+    ["collection_size", "Q"]
+  ]);
+  var GLOBAL_HEAP_HEADER_SIZE = _structure_size(GLOBAL_HEAP_HEADER);
+  var GLOBAL_HEAP_OBJECT = /* @__PURE__ */ new Map([
+    ["object_index", "H"],
+    ["reference_count", "H"],
+    ["reserved", "I"],
+    ["object_size", "Q"]
+  ]);
+  var GLOBAL_HEAP_OBJECT_SIZE = _structure_size(GLOBAL_HEAP_OBJECT);
+  var FRACTAL_HEAP_HEADER = /* @__PURE__ */ new Map([
+    ["signature", "4s"],
+    ["version", "B"],
+    ["object_index_size", "H"],
+    ["filter_info_size", "H"],
+    ["flags", "B"],
+    ["max_managed_object_size", "I"],
+    ["next_huge_object_index", "Q"],
+    ["btree_address_huge_objects", "Q"],
+    ["managed_freespace_size", "Q"],
+    ["freespace_manager_address", "Q"],
+    ["managed_space_size", "Q"],
+    ["managed_alloc_size", "Q"],
+    ["next_directblock_iterator_address", "Q"],
+    ["managed_object_count", "Q"],
+    ["huge_objects_total_size", "Q"],
+    ["huge_object_count", "Q"],
+    ["tiny_objects_total_size", "Q"],
+    ["tiny_object_count", "Q"],
+    ["table_width", "H"],
+    ["starting_block_size", "Q"],
+    ["maximum_direct_block_size", "Q"],
+    ["log2_maximum_heap_size", "H"],
+    ["indirect_starting_rows_count", "H"],
+    ["root_block_address", "Q"],
+    ["indirect_current_rows_count", "H"]
+  ]);
+
+  // esm/dataobjects.js
+  var DataObjects = class {
+    constructor(fh, offset) {
+      let version_hint = struct.unpack_from("<B", fh, offset)[0];
+      if (version_hint == 1) {
+        var [msgs, msg_data, header] = this._parse_v1_objects(fh, offset);
+      } else if (version_hint == "O".charCodeAt(0)) {
+        var [msgs, msg_data, header] = this._parse_v2_objects(fh, offset);
+      } else {
+        throw "InvalidHDF5File('unknown Data Object Header')";
+      }
+      this.fh = fh;
+      this.msgs = msgs;
+      this.msg_data = msg_data;
+      this.offset = offset;
+      this._global_heaps = {};
+      this._header = header;
+      this._filter_pipeline = null;
+      this._chunk_params_set = false;
+      this._chunks = null;
+      this._chunk_dims = null;
+      this._chunk_address = null;
+    }
+    get dtype() {
+      let msg2 = this.find_msg_type(DATATYPE_MSG_TYPE)[0];
+      let msg_offset = msg2.get("offset_to_message");
+      return new DatatypeMessage(this.fh, msg_offset).dtype;
+    }
+    get chunks() {
+      this._get_chunk_params();
+      return this._chunks;
+    }
+    get shape() {
+      let msg2 = this.find_msg_type(DATASPACE_MSG_TYPE)[0];
+      let msg_offset = msg2.get("offset_to_message");
+      return determine_data_shape(this.fh, msg_offset);
+    }
+    get filter_pipeline() {
+      if (this._filter_pipeline != null) {
+        return this._filter_pipeline;
+      }
+      let filter_msgs = this.find_msg_type(DATA_STORAGE_FILTER_PIPELINE_MSG_TYPE);
+      if (!filter_msgs.length) {
+        this._filter_pipeline = null;
+        return this._filter_pipeline;
+      }
+      var offset = filter_msgs[0].get("offset_to_message");
+      let [version, nfilters] = struct.unpack_from("<BB", this.fh, offset);
+      offset += struct.calcsize("<BB");
+      var filters = [];
+      if (version == 1) {
+        let [res0, res1] = struct.unpack_from("<HI", this.fh, offset);
+        offset += struct.calcsize("<HI");
+        for (var _ = 0; _ < nfilters; _++) {
+          let filter_info = _unpack_struct_from(FILTER_PIPELINE_DESCR_V1, this.fh, offset);
+          offset += FILTER_PIPELINE_DESCR_V1_SIZE;
+          let padded_name_length = _padded_size(filter_info.get("name_length"), 8);
+          let fmt = "<" + padded_name_length.toFixed() + "s";
+          let filter_name = struct.unpack_from(fmt, this.fh, offset)[0];
+          filter_info.set("filter_name", filter_name);
+          offset += padded_name_length;
+          fmt = "<" + filter_info.get("client_data_values").toFixed() + "I";
+          let client_data = struct.unpack_from(fmt, this.fh, offset);
+          filter_info.set("client_data", client_data);
+          offset += 4 * filter_info.get("client_data_values");
+          if (filter_info.get("client_data_values") % 2) {
+            offset += 4;
+          }
+          filters.push(filter_info);
+        }
+      } else if (version == 2) {
+        for (let nf = 0; nf < nfilters; nf++) {
+          let filter_info = /* @__PURE__ */ new Map();
+          let buf = this.fh;
+          let filter_id = struct.unpack_from("<H", buf, offset)[0];
+          offset += 2;
+          filter_info.set("filter_id", filter_id);
+          let name_length = 0;
+          if (filter_id > 255) {
+            name_length = struct.unpack_from("<H", buf, offset)[0];
+            offset += 2;
+          }
+          let flags = struct.unpack_from("<H", buf, offset)[0];
+          offset += 2;
+          let optional = (flags & 1) > 0;
+          filter_info.set("optional", optional);
+          let num_client_values = struct.unpack_from("<H", buf, offset)[0];
+          offset += 2;
+          let name;
+          if (name_length > 0) {
+            name = struct.unpack_from(`${name_length}s`, buf, offset)[0];
+            offset += name_length;
+          }
+          filter_info.set("name", name);
+          let client_values = struct.unpack_from(`<${num_client_values}i`, buf, offset);
+          offset += 4 * num_client_values;
+          filter_info.set("client_data_values", client_values);
+          filters.push(filter_info);
+        }
+      } else {
+        throw `version ${version} is not supported`;
+      }
+      this._filter_pipeline = filters;
+      return this._filter_pipeline;
+    }
+    find_msg_type(msg_type) {
+      return this.msgs.filter(function(m) {
+        return m.get("type") == msg_type;
+      });
+    }
+    get_attributes() {
+      let attrs = {};
+      let attr_msgs = this.find_msg_type(ATTRIBUTE_MSG_TYPE);
+      for (let msg2 of attr_msgs) {
+        let offset = msg2.get("offset_to_message");
+        let [name, value] = this.unpack_attribute(offset);
+        attrs[name] = value;
+      }
+      return attrs;
+    }
+    get fillvalue() {
+      let msg2 = this.find_msg_type(FILLVALUE_MSG_TYPE)[0];
+      var offset = msg2.get("offset_to_message");
+      var is_defined;
+      let version = struct.unpack_from("<B", this.fh, offset)[0];
+      var info, size, fillvalue;
+      if (version == 1 || version == 2) {
+        info = _unpack_struct_from(FILLVAL_MSG_V1V2, this.fh, offset);
+        offset += FILLVAL_MSG_V1V2_SIZE;
+        is_defined = info.get("fillvalue_defined");
+      } else if (version == 3) {
+        info = _unpack_struct_from(FILLVAL_MSG_V3, this.fh, offset);
+        offset += FILLVAL_MSG_V3_SIZE;
+        is_defined = info.get("flags") & 32;
+      } else {
+        throw 'InvalidHDF5File("Unknown fillvalue msg version: "' + String(version);
+      }
+      if (is_defined) {
+        size = struct.unpack_from("<I", this.fh, offset)[0];
+        offset += 4;
+      } else {
+        size = 0;
+      }
+      if (size) {
+        let [getter, big_endian, size2] = dtype_getter(this.dtype);
+        let payload_view = new DataView64(this.fh);
+        fillvalue = payload_view[getter](offset, !big_endian, size2);
+      } else {
+        fillvalue = 0;
+      }
+      return fillvalue;
+    }
+    unpack_attribute(offset) {
+      let version = struct.unpack_from("<B", this.fh, offset)[0];
+      var attr_map, padding_multiple;
+      if (version == 1) {
+        attr_map = _unpack_struct_from(ATTR_MSG_HEADER_V1, this.fh, offset);
+        assert(attr_map.get("version") == 1);
+        offset += ATTR_MSG_HEADER_V1_SIZE;
+        padding_multiple = 8;
+      } else if (version == 3) {
+        attr_map = _unpack_struct_from(ATTR_MSG_HEADER_V3, this.fh, offset);
+        assert(attr_map.get("version") == 3);
+        offset += ATTR_MSG_HEADER_V3_SIZE;
+        padding_multiple = 1;
+      } else {
+        throw "unsupported attribute message version: " + version;
+      }
+      let name_size = attr_map.get("name_size");
+      let name = struct.unpack_from("<" + name_size.toFixed() + "s", this.fh, offset)[0];
+      name = name.replace(/\x00$/, "");
+      offset += _padded_size(name_size, padding_multiple);
+      var dtype;
+      try {
+        dtype = new DatatypeMessage(this.fh, offset).dtype;
+      } catch (e) {
+        console.log("Attribute " + name + " type not implemented, set to null.");
+        return [name, null];
+      }
+      offset += _padded_size(attr_map.get("datatype_size"), padding_multiple);
+      let shape = this.determine_data_shape(this.fh, offset);
+      let items = shape.reduce(function(a, b) {
+        return a * b;
+      }, 1);
+      offset += _padded_size(attr_map.get("dataspace_size"), padding_multiple);
+      var value = this._attr_value(dtype, this.fh, items, offset);
+      if (shape.length == 0) {
+        value = value[0];
+      } else {
+      }
+      return [name, value];
+    }
+    determine_data_shape(buf, offset) {
+      let version = struct.unpack_from("<B", buf, offset)[0];
+      var header;
+      if (version == 1) {
+        header = _unpack_struct_from(DATASPACE_MSG_HEADER_V1, buf, offset);
+        assert(header.get("version") == 1);
+        offset += DATASPACE_MSG_HEADER_V1_SIZE;
+      } else if (version == 2) {
+        header = _unpack_struct_from(DATASPACE_MSG_HEADER_V2, buf, offset);
+        assert(header.get("version") == 2);
+        offset += DATASPACE_MSG_HEADER_V2_SIZE;
+      } else {
+        throw "unknown dataspace message version";
+      }
+      let ndims = header.get("dimensionality");
+      let dim_sizes = struct.unpack_from("<" + ndims.toFixed() + "Q", buf, offset);
+      return dim_sizes;
+    }
+    _attr_value(dtype, buf, count, offset) {
+      var value = new Array(count);
+      if (dtype instanceof Array) {
+        let dtype_class = dtype[0];
+        for (var i = 0; i < count; i++) {
+          if (dtype_class == "VLEN_STRING") {
+            let character_set = dtype[2];
+            var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
+            let fmt = "<" + vlen.toFixed() + "s";
+            let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
+            if (character_set == 0) {
+              value[i] = str_data;
+            } else {
+              value[i] = decodeURIComponent(escape(str_data));
+            }
+            offset += 16;
+          } else if (dtype_class == "REFERENCE") {
+            var address = struct.unpack_from("<Q", buf, offset);
+            value[i] = address;
+            offset += 8;
+          } else if (dtype_class == "VLEN_SEQUENCE") {
+            let base_dtype = dtype[1];
+            var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
+            value[i] = this._attr_value(base_dtype, vlen_data, vlen, 0);
+            offset += 16;
+          } else {
+            throw "NotImplementedError";
+          }
+        }
+      } else {
+        let [getter, big_endian, size] = dtype_getter(dtype);
+        let view = new DataView64(buf, 0);
+        for (var i = 0; i < count; i++) {
+          value[i] = view[getter](offset, !big_endian, size);
+          offset += size;
+        }
+      }
+      return value;
+    }
+    _vlen_size_and_data(buf, offset) {
+      let vlen_size = struct.unpack_from("<I", buf, offset)[0];
+      let gheap_id = _unpack_struct_from(GLOBAL_HEAP_ID, buf, offset + 4);
+      let gheap_address = gheap_id.get("collection_address");
+      assert(gheap_id.get("collection_address") < Number.MAX_SAFE_INTEGER);
+      var gheap;
+      if (!(gheap_address in this._global_heaps)) {
+        gheap = new GlobalHeap(this.fh, gheap_address);
+        this._global_heaps[gheap_address] = gheap;
+      }
+      gheap = this._global_heaps[gheap_address];
+      let vlen_data = gheap.objects.get(gheap_id.get("object_index"));
+      return [vlen_size, vlen_data];
+    }
+    _parse_v1_objects(buf, offset) {
+      let header = _unpack_struct_from(OBJECT_HEADER_V1, buf, offset);
+      assert(header.get("version") == 1);
+      let total_header_messages = header.get("total_header_messages");
+      var block_size = header.get("object_header_size");
+      var block_offset = offset + _structure_size(OBJECT_HEADER_V1);
+      var msg_data = buf.slice(block_offset, block_offset + block_size);
+      var object_header_blocks = [[block_offset, block_size]];
+      var current_block = 0;
+      var local_offset = 0;
+      var msgs = new Array(total_header_messages);
+      for (var i = 0; i < total_header_messages; i++) {
+        if (local_offset >= block_size) {
+          [block_offset, block_size] = object_header_blocks[++current_block];
+          local_offset = 0;
+        }
+        let msg2 = _unpack_struct_from(HEADER_MSG_INFO_V1, buf, block_offset + local_offset);
+        let offset_to_message = block_offset + local_offset + HEADER_MSG_INFO_V1_SIZE;
+        msg2.set("offset_to_message", offset_to_message);
+        if (msg2.get("type") == OBJECT_CONTINUATION_MSG_TYPE) {
+          var [fh_off, size] = struct.unpack_from("<QQ", buf, offset_to_message);
+          object_header_blocks.push([fh_off, size]);
+        }
+        local_offset += HEADER_MSG_INFO_V1_SIZE + msg2.get("size");
+        msgs[i] = msg2;
+      }
+      return [msgs, msg_data, header];
+    }
+    _parse_v2_objects(buf, offset) {
+      var [header, creation_order_size, block_offset] = this._parse_v2_header(buf, offset);
+      offset = block_offset;
+      var msgs = [];
+      var block_size = header.get("size_of_chunk_0");
+      var msg_data = buf.slice(offset, offset += block_size);
+      var object_header_blocks = [[block_offset, block_size]];
+      var current_block = 0;
+      var local_offset = 0;
+      while (true) {
+        if (local_offset >= block_size - HEADER_MSG_INFO_V2_SIZE) {
+          let next_block = object_header_blocks[++current_block];
+          if (next_block == null) {
+            break;
+          }
+          [block_offset, block_size] = next_block;
+          local_offset = 0;
+        }
+        let msg2 = _unpack_struct_from(HEADER_MSG_INFO_V2, buf, block_offset + local_offset);
+        let offset_to_message = block_offset + local_offset + HEADER_MSG_INFO_V2_SIZE + creation_order_size;
+        msg2.set("offset_to_message", offset_to_message);
+        if (msg2.get("type") == OBJECT_CONTINUATION_MSG_TYPE) {
+          var [fh_off, size] = struct.unpack_from("<QQ", buf, offset_to_message);
+          object_header_blocks.push([fh_off + 4, size - 4]);
+        }
+        local_offset += HEADER_MSG_INFO_V2_SIZE + msg2.get("size") + creation_order_size;
+        msgs.push(msg2);
+      }
+      return [msgs, msg_data, header];
+    }
+    _parse_v2_header(buf, offset) {
+      let header = _unpack_struct_from(OBJECT_HEADER_V2, buf, offset);
+      var creation_order_size;
+      offset += _structure_size(OBJECT_HEADER_V2);
+      assert(header.get("version") == 2);
+      if (header.get("flags") & 4) {
+        creation_order_size = 2;
+      } else {
+        creation_order_size = 0;
+      }
+      assert((header.get("flags") & 16) == 0);
+      if (header.get("flags") & 32) {
+        let times = struct.unpack_from("<4I", buf, offset);
+        offset += 16;
+        header.set("access_time", times[0]);
+        header.set("modification_time", times[1]);
+        header.set("change_time", times[2]);
+        header.set("birth_time", times[3]);
+      }
+      let chunk_fmt = ["<B", "<H", "<I", "<Q"][header.get("flags") & 3];
+      header.set("size_of_chunk_0", struct.unpack_from(chunk_fmt, buf, offset)[0]);
+      offset += struct.calcsize(chunk_fmt);
+      return [header, creation_order_size, offset];
+    }
+    get_links() {
+      return Object.fromEntries(this.iter_links());
+    }
+    *iter_links() {
+      for (let msg2 of this.msgs) {
+        if (msg2.get("type") == SYMBOL_TABLE_MSG_TYPE) {
+          yield* this._iter_links_from_symbol_tables(msg2);
+        } else if (msg2.get("type") == LINK_MSG_TYPE) {
+          yield this._get_link_from_link_msg(msg2);
+        } else if (msg2.get("type") == LINK_INFO_MSG_TYPE) {
+          yield* this._iter_link_from_link_info_msg(msg2);
+        }
+      }
+    }
+    *_iter_links_from_symbol_tables(sym_tbl_msg) {
+      assert(sym_tbl_msg.get("size") == 16);
+      let data = _unpack_struct_from(SYMBOL_TABLE_MSG, this.fh, sym_tbl_msg.get("offset_to_message"));
+      yield* this._iter_links_btree_v1(data.get("btree_address"), data.get("heap_address"));
+    }
+    *_iter_links_btree_v1(btree_address, heap_address) {
+      let btree = new BTreeV1Groups(this.fh, btree_address);
+      let heap = new Heap(this.fh, heap_address);
+      for (let symbol_table_address of btree.symbol_table_addresses()) {
+        let table = new SymbolTable(this.fh, symbol_table_address);
+        table.assign_name(heap);
+        yield* Object.entries(table.get_links(heap));
+      }
+    }
+    _get_link_from_link_msg(link_msg) {
+      let offset = link_msg.get("offset_to_message");
+      return this._decode_link_msg(this.fh, offset)[1];
+      ;
+    }
+    _decode_link_msg(data, offset) {
+      let [version, flags] = struct.unpack_from("<BB", data, offset);
+      offset += 2;
+      assert(version == 1);
+      let size_of_length_of_link_name = 2 ** (flags & 3);
+      let link_type_field_present = (flags & 2 ** 3) > 0;
+      let link_name_character_set_field_present = (flags & 2 ** 4) > 0;
+      let ordered = (flags & 2 ** 2) > 0;
+      let link_type;
+      if (link_type_field_present) {
+        link_type = struct.unpack_from("<B", data, offset)[0];
+        offset += 1;
+      } else {
+        link_type = 0;
+      }
+      assert([0, 1].includes(link_type));
+      let creationorder;
+      if (ordered) {
+        creationorder = struct.unpack_from("<Q", data, offset)[0];
+        offset += 8;
+      }
+      let link_name_character_set = 0;
+      if (link_name_character_set_field_present) {
+        link_name_character_set = struct.unpack_from("<B", data, offset)[0];
+        offset += 1;
+      }
+      let encoding = link_name_character_set == 0 ? "ascii" : "utf-8";
+      let name_size_fmt = ["<B", "<H", "<I", "<Q"][flags & 3];
+      let name_size = struct.unpack_from(name_size_fmt, data, offset)[0];
+      offset += size_of_length_of_link_name;
+      let name = new TextDecoder(encoding).decode(data.slice(offset, offset + name_size));
+      offset += name_size;
+      let address;
+      if (link_type == 0) {
+        address = struct.unpack_from("<Q", data, offset)[0];
+      } else if (link_type == 1) {
+        let length_of_soft_link_value = struct.unpack_from("<H", data, offset)[0];
+        offset += 2;
+        address = new TextDecoder(encoding).decode(data.slice(offset, offset + length_of_soft_link_value));
+      }
+      return [creationorder, [name, address]];
+    }
+    *_iter_link_from_link_info_msg(info_msg) {
+      let offset = info_msg.get("offset_to_message");
+      let data = this._decode_link_info_msg(this.fh, offset);
+      let heap_address = data.get("heap_address");
+      let name_btree_address = data.get("name_btree_address");
+      let order_btree_address = data.get("order_btree_address");
+      if (name_btree_address != null) {
+        yield* this._iter_links_btree_v2(name_btree_address, order_btree_address, heap_address);
+      }
+    }
+    *_iter_links_btree_v2(name_btree_address, order_btree_address, heap_address) {
+      let heap = new FractalHeap(this.fh, heap_address);
+      let btree;
+      if (order_btree_address != UNDEFINED_ADDRESS2) {
+        btree = new BTreeV2GroupOrders(this.fh, order_btree_address);
+      } else {
+        btree = new BTreeV2GroupNames(this.fh, name_btree_address);
+      }
+      let items = /* @__PURE__ */ new Map();
+      for (let record of btree.iter_records()) {
+        let data = heap.get_data(record.get("heapid"));
+        let [creationorder, item] = this._decode_link_msg(data, 0);
+        items.set(creationorder, item);
+      }
+      let sorted_keys = Array.from(items.keys()).sort();
+      for (let key of sorted_keys) {
+        yield items.get(key);
+      }
+    }
+    _decode_link_info_msg(data, offset) {
+      let [version, flags] = struct.unpack_from("<BB", data, offset);
+      assert(version == 0);
+      offset += 2;
+      if ((flags & 1) > 0) {
+        offset += 8;
+      }
+      let fmt = (flags & 2) > 0 ? LINK_INFO_MSG2 : LINK_INFO_MSG1;
+      let link_info = _unpack_struct_from(fmt, data, offset);
+      let output = /* @__PURE__ */ new Map();
+      for (let [k, v] of link_info.entries()) {
+        output.set(k, v == UNDEFINED_ADDRESS2 ? null : v);
+      }
+      return output;
+    }
+    get is_dataset() {
+      return this.find_msg_type(DATASPACE_MSG_TYPE).length > 0;
+    }
+    get_data() {
+      let msg2 = this.find_msg_type(DATA_STORAGE_MSG_TYPE)[0];
+      let msg_offset = msg2.get("offset_to_message");
+      var [version, dims, layout_class, property_offset] = this._get_data_message_properties(msg_offset);
+      if (layout_class == 0) {
+        throw "Compact storage of DataObject not implemented";
+      } else if (layout_class == 1) {
+        return this._get_contiguous_data(property_offset);
+      } else if (layout_class == 2) {
+        return this._get_chunked_data(msg_offset);
+      }
+    }
+    _get_data_message_properties(msg_offset) {
+      let dims, layout_class, property_offset;
+      let [version, arg1, arg2] = struct.unpack_from("<BBB", this.fh, msg_offset);
+      if (version == 1 || version == 2) {
+        dims = arg1;
+        layout_class = arg2;
+        property_offset = msg_offset;
+        property_offset += struct.calcsize("<BBB");
+        property_offset += struct.calcsize("<BI");
+        assert(layout_class == 1 || layout_class == 2);
+      } else if (version == 3 || version == 4) {
+        layout_class = arg1;
+        property_offset = msg_offset;
+        property_offset += struct.calcsize("<BB");
+      }
+      assert(version >= 1 && version <= 4);
+      return [version, dims, layout_class, property_offset];
+    }
+    _get_contiguous_data(property_offset) {
+      let [data_offset] = struct.unpack_from("<Q", this.fh, property_offset);
+      if (data_offset == UNDEFINED_ADDRESS2) {
+        let size = this.shape.reduce(function(a, b) {
+          return a * b;
+        }, 1);
+        return new Array(size);
+      }
+      var fullsize = this.shape.reduce(function(a, b) {
+        return a * b;
+      }, 1);
+      if (!(this.dtype instanceof Array)) {
+        let dtype = this.dtype;
+        if (/[<>=!@\|]?(i|u|f|S)(\d*)/.test(dtype)) {
+          let [item_getter, item_is_big_endian, item_size] = dtype_getter(dtype);
+          let output = new Array(fullsize);
+          let view = new DataView64(this.fh);
+          for (var i = 0; i < fullsize; i++) {
+            output[i] = view[item_getter](data_offset + i * item_size, !item_is_big_endian, item_size);
+          }
+          return output;
+        } else {
+          throw "not Implemented - no proper dtype defined";
+        }
+      } else {
+        let dtype_class = this.dtype[0];
+        if (dtype_class == "REFERENCE") {
+          let size = this.dtype[1];
+          if (size != 8) {
+            throw "NotImplementedError('Unsupported Reference type')";
+          }
+          let ref_addresses = this.fh.slice(data_offset, data_offset + fullsize);
+          return ref_addresses;
+        } else if (dtype_class == "VLEN_STRING") {
+          let character_set = this.dtype[2];
+          var value = [];
+          for (var i = 0; i < fullsize; i++) {
+            var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
+            let fmt = "<" + vlen.toFixed() + "s";
+            let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
+            if (character_set == 0) {
+              value[i] = str_data;
+            } else {
+              value[i] = decodeURIComponent(escape(str_data));
+            }
+            data_offset += 16;
+          }
+          return value;
+        } else {
+          throw "NotImplementedError('datatype not implemented')";
+        }
+      }
+    }
+    _get_chunked_data(offset) {
+      this._get_chunk_params();
+      var chunk_btree = new BTreeV1RawDataChunks(this.fh, this._chunk_address, this._chunk_dims);
+      let data = chunk_btree.construct_data_from_chunks(this.chunks, this.shape, this.dtype, this.filter_pipeline);
+      if (this.dtype instanceof Array && /^VLEN/.test(this.dtype[0])) {
+        let dtype_class = this.dtype[0];
+        for (var i = 0; i < data.length; i++) {
+          let [item_size, gheap_address, object_index] = data[i];
+          var gheap;
+          if (!(gheap_address in this._global_heaps)) {
+            gheap = new GlobalHeap(this.fh, gheap_address);
+            this._global_heaps[gheap_address] = gheap;
+          } else {
+            gheap = this._global_heaps[gheap_address];
+          }
+          let vlen_data = gheap.objects.get(object_index);
+          if (dtype_class == "VLEN_STRING") {
+            let character_set = this.dtype[2];
+            let fmt = "<" + item_size.toFixed() + "s";
+            let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
+            if (character_set == 0) {
+              data[i] = str_data;
+            } else {
+              data[i] = decodeURIComponent(escape(str_data));
+            }
+          }
+        }
+      }
+      return data;
+    }
+    _get_chunk_params() {
+      if (this._chunk_params_set) {
+        return;
+      }
+      this._chunk_params_set = true;
+      var msg2 = this.find_msg_type(DATA_STORAGE_MSG_TYPE)[0];
+      var offset = msg2.get("offset_to_message");
+      var [version, dims, layout_class, property_offset] = this._get_data_message_properties(offset);
+      if (layout_class != 2) {
+        return;
+      }
+      var data_offset;
+      if (version == 1 || version == 2) {
+        var address = struct.unpack_from("<Q", this.fh, property_offset)[0];
+        data_offset = property_offset + struct.calcsize("<Q");
+      } else if (version == 3) {
+        var [dims, address] = struct.unpack_from("<BQ", this.fh, property_offset);
+        data_offset = property_offset + struct.calcsize("<BQ");
+      }
+      assert(version >= 1 && version <= 3);
+      var fmt = "<" + (dims - 1).toFixed() + "I";
+      var chunk_shape = struct.unpack_from(fmt, this.fh, data_offset);
+      this._chunks = chunk_shape;
+      this._chunk_dims = dims;
+      this._chunk_address = address;
+      return;
+    }
+  };
+  function determine_data_shape(buf, offset) {
+    let version = struct.unpack_from("<B", buf, offset)[0];
+    var header;
+    if (version == 1) {
+      header = _unpack_struct_from(DATASPACE_MSG_HEADER_V1, buf, offset);
+      assert(header.get("version") == 1);
+      offset += DATASPACE_MSG_HEADER_V1_SIZE;
+    } else if (version == 2) {
+      header = _unpack_struct_from(DATASPACE_MSG_HEADER_V2, buf, offset);
+      assert(header.get("version") == 2);
+      offset += DATASPACE_MSG_HEADER_V2_SIZE;
+    } else {
+      throw "InvalidHDF5File('unknown dataspace message version')";
+    }
+    let ndims = header.get("dimensionality");
+    let dim_sizes = struct.unpack_from("<" + (ndims * 2).toFixed() + "I", buf, offset);
+    return dim_sizes.filter(function(s, i) {
+      return i % 2 == 0;
+    });
+  }
+  var UNDEFINED_ADDRESS2 = struct.unpack_from("<Q", new Uint8Array([255, 255, 255, 255, 255, 255, 255, 255]).buffer);
+  var GLOBAL_HEAP_ID = /* @__PURE__ */ new Map([
+    ["collection_address", "Q"],
+    ["object_index", "I"]
+  ]);
+  var GLOBAL_HEAP_ID_SIZE = _structure_size(GLOBAL_HEAP_ID);
+  var ATTR_MSG_HEADER_V1 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["reserved", "B"],
+    ["name_size", "H"],
+    ["datatype_size", "H"],
+    ["dataspace_size", "H"]
+  ]);
+  var ATTR_MSG_HEADER_V1_SIZE = _structure_size(ATTR_MSG_HEADER_V1);
+  var ATTR_MSG_HEADER_V3 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["flags", "B"],
+    ["name_size", "H"],
+    ["datatype_size", "H"],
+    ["dataspace_size", "H"],
+    ["character_set_encoding", "B"]
+  ]);
+  var ATTR_MSG_HEADER_V3_SIZE = _structure_size(ATTR_MSG_HEADER_V3);
+  var OBJECT_HEADER_V1 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["reserved", "B"],
+    ["total_header_messages", "H"],
+    ["object_reference_count", "I"],
+    ["object_header_size", "I"],
+    ["padding", "I"]
+  ]);
+  var OBJECT_HEADER_V2 = /* @__PURE__ */ new Map([
+    ["signature", "4s"],
+    ["version", "B"],
+    ["flags", "B"]
+  ]);
+  var DATASPACE_MSG_HEADER_V1 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["dimensionality", "B"],
+    ["flags", "B"],
+    ["reserved_0", "B"],
+    ["reserved_1", "I"]
+  ]);
+  var DATASPACE_MSG_HEADER_V1_SIZE = _structure_size(DATASPACE_MSG_HEADER_V1);
+  var DATASPACE_MSG_HEADER_V2 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["dimensionality", "B"],
+    ["flags", "B"],
+    ["type", "B"]
+  ]);
+  var DATASPACE_MSG_HEADER_V2_SIZE = _structure_size(DATASPACE_MSG_HEADER_V2);
+  var HEADER_MSG_INFO_V1 = /* @__PURE__ */ new Map([
+    ["type", "H"],
+    ["size", "H"],
+    ["flags", "B"],
+    ["reserved", "3s"]
+  ]);
+  var HEADER_MSG_INFO_V1_SIZE = _structure_size(HEADER_MSG_INFO_V1);
+  var HEADER_MSG_INFO_V2 = /* @__PURE__ */ new Map([
+    ["type", "B"],
+    ["size", "H"],
+    ["flags", "B"]
+  ]);
+  var HEADER_MSG_INFO_V2_SIZE = _structure_size(HEADER_MSG_INFO_V2);
+  var SYMBOL_TABLE_MSG = /* @__PURE__ */ new Map([
+    ["btree_address", "Q"],
+    ["heap_address", "Q"]
+  ]);
+  var LINK_INFO_MSG1 = /* @__PURE__ */ new Map([
+    ["heap_address", "Q"],
+    ["name_btree_address", "Q"]
+  ]);
+  var LINK_INFO_MSG2 = /* @__PURE__ */ new Map([
+    ["heap_address", "Q"],
+    ["name_btree_address", "Q"],
+    ["order_btree_address", "Q"]
+  ]);
+  var FILLVAL_MSG_V1V2 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["space_allocation_time", "B"],
+    ["fillvalue_write_time", "B"],
+    ["fillvalue_defined", "B"]
+  ]);
+  var FILLVAL_MSG_V1V2_SIZE = _structure_size(FILLVAL_MSG_V1V2);
+  var FILLVAL_MSG_V3 = /* @__PURE__ */ new Map([
+    ["version", "B"],
+    ["flags", "B"]
+  ]);
+  var FILLVAL_MSG_V3_SIZE = _structure_size(FILLVAL_MSG_V3);
+  var FILTER_PIPELINE_DESCR_V1 = /* @__PURE__ */ new Map([
+    ["filter_id", "H"],
+    ["name_length", "H"],
+    ["flags", "H"],
+    ["client_data_values", "H"]
+  ]);
+  var FILTER_PIPELINE_DESCR_V1_SIZE = _structure_size(FILTER_PIPELINE_DESCR_V1);
+  var DATASPACE_MSG_TYPE = 1;
+  var LINK_INFO_MSG_TYPE = 2;
+  var DATATYPE_MSG_TYPE = 3;
+  var FILLVALUE_MSG_TYPE = 5;
+  var LINK_MSG_TYPE = 6;
+  var DATA_STORAGE_MSG_TYPE = 8;
+  var DATA_STORAGE_FILTER_PIPELINE_MSG_TYPE = 11;
+  var ATTRIBUTE_MSG_TYPE = 12;
+  var OBJECT_CONTINUATION_MSG_TYPE = 16;
+  var SYMBOL_TABLE_MSG_TYPE = 17;
+
+  // esm/high-level.js
+  var __version__ = "0.4.0.dev";
+  var Group = class {
+    constructor(name, dataobjects, parent, getterProxy = false) {
+      if (parent == null) {
+        this.parent = this;
+        this.file = this;
+      } else {
+        this.parent = parent;
+        this.file = parent.file;
+      }
+      this.name = name;
+      this._links = dataobjects.get_links();
+      this._dataobjects = dataobjects;
+      this._attrs = null;
+      this._keys = null;
+      if (getterProxy) {
+        return new Proxy(this, groupGetHandler);
+      }
+    }
+    get keys() {
+      if (this._keys == null) {
+        this._keys = Object.keys(this._links);
+      }
+      return this._keys.slice();
+    }
+    get values() {
+      return this.keys.map((k) => this.get(k));
+    }
+    length() {
+      return this.keys.length;
+    }
+    _dereference(ref) {
+      if (!ref) {
+        throw "cannot deference null reference";
+      }
+      let obj = this.file._get_object_by_address(ref);
+      if (obj == null) {
+        throw "reference not found in file";
+      }
+      return obj;
+    }
+    get(y) {
+      if (typeof y == "number") {
+        return this._dereference(y);
+      }
+      var path = normpath(y);
+      if (path == "/") {
+        return this.file;
+      }
+      if (path == ".") {
+        return this;
+      }
+      if (/^\//.test(path)) {
+        return this.file.get(path.slice(1));
+      }
+      if (posix_dirname(path) != "") {
+        var [next_obj, additional_obj] = path.split(/\/(.*)/);
+      } else {
+        var next_obj = path;
+        var additional_obj = ".";
+      }
+      if (!(next_obj in this._links)) {
+        throw next_obj + " not found in group";
+      }
+      var obj_name = normpath(this.name + "/" + next_obj);
+      let link_target = this._links[next_obj];
+      if (typeof link_target == "string") {
+        try {
+          return this.get(link_target);
+        } catch (error) {
+          return null;
+        }
+      }
+      var dataobjs = new DataObjects(this.file._fh, link_target);
+      if (dataobjs.is_dataset) {
+        if (additional_obj != ".") {
+          throw obj_name + " is a dataset, not a group";
+        }
+        return new Dataset(obj_name, dataobjs, this);
+      } else {
+        var new_group = new Group(obj_name, dataobjs, this);
+        return new_group.get(additional_obj);
+      }
+    }
+    visit(func) {
+      return this.visititems((name, obj) => func(name));
+    }
+    visititems(func) {
+      var root_name_length = this.name.length;
+      if (!/\/$/.test(this.name)) {
+        root_name_length += 1;
+      }
+      var queue = this.values.slice();
+      while (queue) {
+        let obj = queue.shift();
+        if (queue.length == 1)
+          console.log(obj);
+        let name = obj.name.slice(root_name_length);
+        let ret = func(name, obj);
+        if (ret != null) {
+          return ret;
+        }
+        if (obj instanceof Group) {
+          queue = queue.concat(obj.values);
+        }
+      }
+      return null;
+    }
+    get attrs() {
+      if (this._attrs == null) {
+        this._attrs = this._dataobjects.get_attributes();
+      }
+      return this._attrs;
+    }
+  };
+  var groupGetHandler = {
+    get: function(target, prop, receiver) {
+      if (prop in target) {
+        return target[prop];
+      }
+      return target.get(prop);
+    }
+  };
+  var File = class extends Group {
+    constructor(fh, filename) {
+      var superblock = new SuperBlock(fh, 0);
+      var offset = superblock.offset_to_dataobjects;
+      var dataobjects = new DataObjects(fh, offset);
+      super("/", dataobjects, null);
+      this.parent = this;
+      this._fh = fh;
+      this.filename = filename || "";
+      this.file = this;
+      this.mode = "r";
+      this.userblock_size = 0;
+    }
+    _get_object_by_address(obj_addr) {
+      if (this._dataobjects.offset == obj_addr) {
+        return this;
+      }
+      return this.visititems((y) => {
+        y._dataobjects.offset == obj_addr ? y : null;
+      });
+    }
+  };
+  var Dataset = class extends Array {
+    constructor(name, dataobjects, parent) {
+      super();
+      this.parent = parent;
+      this.file = parent.file;
+      this.name = name;
+      this._dataobjects = dataobjects;
+      this._attrs = null;
+      this._astype = null;
+    }
+    get value() {
+      var data = this._dataobjects.get_data();
+      if (this._astype == null) {
+        return data;
+      }
+      return data.astype(this._astype);
+    }
+    get shape() {
+      return this._dataobjects.shape;
+    }
+    get attrs() {
+      return this._dataobjects.get_attributes();
+    }
+    get dtype() {
+      return this._dataobjects.dtype;
+    }
+    get fillvalue() {
+      return this._dataobjects.fillvalue;
+    }
+  };
+  function posix_dirname(p) {
+    let sep = "/";
+    let i = p.lastIndexOf(sep) + 1;
+    let head = p.slice(0, i);
+    let all_sep = new RegExp("^" + sep + "+$");
+    let end_sep = new RegExp(sep + "$");
+    if (head && !all_sep.test(head)) {
+      head = head.replace(end_sep, "");
+    }
+    return head;
+  }
+  function normpath(path) {
+    return path.replace(/\/(\/)+/g, "/");
+  }
+
+  // browser_index.js
+  window.hdf5 = high_level_exports;
+})();
 //# sourceMappingURL=hdf5.js.map
