@@ -6,7 +6,7 @@
   "exports": "./dist/index.js",
   "browser": "dist/hdf5.js",
   "scripts": {
-    "build": "esbuild browser_index.js --bundle --sourcemap --outfile=dist/hdf5.js",
+    "build": "esbuild browser_index.js --bundle --sourcemap --target=es2020 --outfile=dist/hdf5.js",
     "build_node": "esbuild index.js --bundle --platform=node --outfile=dist/index.js"
   },
   "repository": {
