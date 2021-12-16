@@ -1,10 +1,15 @@
 (() => {
   var __defProp = Object.defineProperty;
+  var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
   var __markAsModule = (target) => __defProp(target, "__esModule", { value: true });
   var __export = (target, all) => {
     __markAsModule(target);
     for (var name in all)
       __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __publicField = (obj, key, value) => {
+    __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
+    return value;
   };
 
   // esm/high-level.js
@@ -4325,14 +4330,17 @@
     }
   };
   var BTreeV1 = class extends AbstractBTree {
-    B_LINK_NODE = /* @__PURE__ */ new Map([
-      ["signature", "4s"],
-      ["node_type", "B"],
-      ["node_level", "B"],
-      ["entries_used", "H"],
-      ["left_sibling", "Q"],
-      ["right_sibling", "Q"]
-    ]);
+    constructor() {
+      super(...arguments);
+      __publicField(this, "B_LINK_NODE", /* @__PURE__ */ new Map([
+        ["signature", "4s"],
+        ["node_type", "B"],
+        ["node_level", "B"],
+        ["entries_used", "H"],
+        ["left_sibling", "Q"],
+        ["right_sibling", "Q"]
+      ]));
+    }
     _read_node_header(offset, node_level) {
       let node2 = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
       if (node_level != null) {
@@ -4344,9 +4352,9 @@
     }
   };
   var BTreeV1Groups = class extends BTreeV1 {
-    NODE_TYPE = 0;
     constructor(fh, offset) {
       super(fh, offset);
+      __publicField(this, "NODE_TYPE", 0);
       this.init();
     }
     _read_node(offset, node_level) {
@@ -4378,9 +4386,9 @@
     }
   };
   var BTreeV1RawDataChunks = class extends BTreeV1 {
-    NODE_TYPE = 1;
     constructor(fh, offset, dims) {
       super(fh, offset);
+      __publicField(this, "NODE_TYPE", 1);
       this.dims = dims;
       this.init();
     }
@@ -4542,26 +4550,26 @@
     }
   };
   var BTreeV2 = class extends AbstractBTree {
-    B_TREE_HEADER = /* @__PURE__ */ new Map([
-      ["signature", "4s"],
-      ["version", "B"],
-      ["node_type", "B"],
-      ["node_size", "I"],
-      ["record_size", "H"],
-      ["depth", "H"],
-      ["split_percent", "B"],
-      ["merge_percent", "B"],
-      ["root_address", "Q"],
-      ["root_nrecords", "H"],
-      ["total_nrecords", "Q"]
-    ]);
-    B_LINK_NODE = /* @__PURE__ */ new Map([
-      ["signature", "4s"],
-      ["version", "B"],
-      ["node_type", "B"]
-    ]);
     constructor(fh, offset) {
       super(fh, offset);
+      __publicField(this, "B_TREE_HEADER", /* @__PURE__ */ new Map([
+        ["signature", "4s"],
+        ["version", "B"],
+        ["node_type", "B"],
+        ["node_size", "I"],
+        ["record_size", "H"],
+        ["depth", "H"],
+        ["split_percent", "B"],
+        ["merge_percent", "B"],
+        ["root_address", "Q"],
+        ["root_nrecords", "H"],
+        ["total_nrecords", "Q"]
+      ]));
+      __publicField(this, "B_LINK_NODE", /* @__PURE__ */ new Map([
+        ["signature", "4s"],
+        ["version", "B"],
+        ["node_type", "B"]
+      ]));
       this.init();
     }
     _read_root_node() {
@@ -4689,7 +4697,10 @@
     }
   };
   var BTreeV2GroupNames = class extends BTreeV2 {
-    NODE_TYPE = 5;
+    constructor() {
+      super(...arguments);
+      __publicField(this, "NODE_TYPE", 5);
+    }
     _parse_record(buf, offset, size) {
       let namehash = struct.unpack_from("<I", buf, offset)[0];
       offset += 4;
@@ -4697,7 +4708,10 @@
     }
   };
   var BTreeV2GroupOrders = class extends BTreeV2 {
-    NODE_TYPE = 6;
+    constructor() {
+      super(...arguments);
+      __publicField(this, "NODE_TYPE", 6);
+    }
     _parse_record(buf, offset, size) {
       let creationorder = struct.unpack_from("<Q", buf, offset)[0];
       offset += 8;
