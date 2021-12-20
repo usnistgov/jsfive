@@ -1,5 +1,5 @@
-import { default as pako } from '../web_modules/pako-es.js';
-import { DataView64, struct } from './core.js';
+import * as pako from '../node_modules/pako/dist/pako.esm.mjs';
+import { struct } from './core.js';
 
 const zlib_decompress = function (buf, itemsize) {
   let input_array = new Uint8Array(buf);
@@ -30,7 +30,7 @@ function _verify_fletcher32(chunk_buffer) {
   //# calculate checksums
   var odd_chunk_buffer = ((chunk_buffer.byteLength % 2) != 0);
   var data_length = chunk_buffer.byteLength - 4;
-  var view = new DataView64(chunk_buffer);
+  var view = new DataView(chunk_buffer);
 
   var sum1 = 0;
   var sum2 = 0;
