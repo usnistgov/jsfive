@@ -1,6 +1,6 @@
 import { DatatypeMessage } from './datatype-msg.js';
 import { _structure_size, _padded_size, _unpack_struct_from, struct, dtype_getter, DataView64, assert } from './core.js';
-import { BTreeV1Groups, BTreeV1RawDataChunks, BTreeV2GroupNames, BTreeV2GroupOrders, GZIP_DEFLATE_FILTER, SHUFFLE_FILTER, FLETCH32_FILTER } from './btree.js';
+import { BTreeV1Groups, BTreeV1RawDataChunks, BTreeV2GroupNames, BTreeV2GroupOrders } from './btree.js';
 import { Heap, SymbolTable, GlobalHeap, FractalHeap } from './misc-low-level.js';
 
 export class DataObjects {
