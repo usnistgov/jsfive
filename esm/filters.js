@@ -1,4 +1,5 @@
-import {default as pako} from '../web_modules/pako-es.js';
+import { default as pako } from '../web_modules/pako-es.js';
+import { DataView64, struct } from './core.js';
 
 const zlib_decompress = function (buf, itemsize) {
   let input_array = new Uint8Array(buf);
@@ -24,6 +25,38 @@ const fletch32 = function (buf, itemsize) {
   return buf.slice(0, -4);
 }
 
+function _verify_fletcher32(chunk_buffer) {
+  //""" Verify a chunk with a fletcher32 checksum. """
+  //# calculate checksums
+  var odd_chunk_buffer = ((chunk_buffer.byteLength % 2) != 0);
+  var data_length = chunk_buffer.byteLength - 4;
+  var view = new DataView64(chunk_buffer);
+
+  var sum1 = 0;
+  var sum2 = 0;
+  for (var offset=0; offset<(data_length-1); offset+=2) {
+    let datum = view.getUint16(offset, true); // little-endian
+    sum1 = (sum1 + datum) % 65535
+    sum2 = (sum2 + sum1) % 65535
+  }
+  if (odd_chunk_buffer) {
+    // process the last item:
+    let datum = view.getUint8(data_length-1);
+    sum1 = (sum1 + datum) % 65535
+    sum2 = (sum2 + sum1) % 65535
+  }
+
+  //# extract stored checksums
+  var [ref_sum1, ref_sum2] = struct.unpack_from('>HH', chunk_buffer, data_length); // .fromstring(chunk_buffer[-4:], '>u2')
+  ref_sum1 = ref_sum1 % 65535
+  ref_sum2 = ref_sum2 % 65535
+
+  //# compare
+  if (sum1 != ref_sum1 || sum2 != ref_sum2) {
+    throw 'ValueError("fletcher32 checksum invalid")';
+  }
+  return true
+}
 
 //# IV.A.2.l The Data Storage - Filter Pipeline message
 var RESERVED_FILTER = 0;
