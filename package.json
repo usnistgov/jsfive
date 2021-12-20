@@ -1,6 +1,6 @@
 {
   "name": "jsfive",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "./dist/index.js",
   "exports": "./dist/index.js",
@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
-    "pako-es": "^1.0.9"
+    "pako": "^2.0.4"
   },
   "devDependencies": {
     "esbuild": "^0.14.2"
