@@ -1,7 +1,5 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
 import { Filters } from './filters.js';
-import {default as pako} from '../web_modules/pako-es.js';
-
 
 class AbstractBTree {
   //B_LINK_NODE = null;
@@ -308,8 +306,8 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       }
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
-      if (FILTERS.has(filter_id)) {
-        return FILTERS.get(filter_id)(buf, itemsize);
+      if (Filters.has(filter_id)) {
+        return Filters.get(filter_id)(buf, itemsize);
       }
       else {
         throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
