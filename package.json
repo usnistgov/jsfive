@@ -2,24 +2,12 @@
   "name": "jsfive",
   "version": "0.3.5",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
-  "main": "dist/index.js",
-  "module": "index.js",
+  "main": "./dist/index.js",
+  "exports": "./dist/index.js",
   "browser": "dist/hdf5.js",
   "scripts": {
-    "build": "parcel build browser_index.js --target browser",
-    "build_node": "parcel build index.js --target main"
-  },
-  "targets": {
-    "browser": {
-      "context": "browser",
-      "outputFormat": "global"
-    },
-    "main": {
-      "context": "node",
-      "engines": {
-        "node": ">= 8.0.0"
-      }
-    }
+    "build": "esbuild browser_index.js --bundle --sourcemap --target=es2020 --outfile=dist/hdf5.js",
+    "build_node": "esbuild index.js --bundle --platform=node --outfile=dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -41,15 +29,9 @@
     "pako-es": "^1.0.9"
   },
   "devDependencies": {
-    "@babel/plugin-proposal-class-properties": "^7.14.5",
-    "parcel": "^2.0.0-beta.2"
+    "esbuild": "^0.14.2"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "babel": {
-    "plugins": [
-      "@babel/plugin-proposal-class-properties"
-    ]
   }
 }
