@@ -1,12 +1,7 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
+import { Filters } from './filters.js';
 import {default as pako} from '../web_modules/pako-es.js';
 
-const zlib = {
-  decompress: function(buf) {
-    let input_array = new Uint8Array(buf);
-    return pako.inflate(input_array).buffer;
-    }
-};
 
 class AbstractBTree {
   //B_LINK_NODE = null;
@@ -302,7 +297,7 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
   _filter_chunk(chunk_buffer, filter_mask, filter_pipeline, itemsize) {
     //""" Apply decompression filters to a chunk of data. """
     let num_filters = filter_pipeline.length;
-    var chunk_buffer_out = chunk_buffer.slice();
+    let buf = chunk_buffer.slice();
     for (var filter_index=num_filters-1; filter_index >=0; filter_index--) {
       //for i, pipeline_entry in enumerate(filter_pipeline[::-1]):
 
@@ -313,32 +308,13 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       }
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
-      if (filter_id == GZIP_DEFLATE_FILTER) {
-        chunk_buffer_out = zlib.decompress(chunk_buffer_out);
-      }
-
-      else if (filter_id == SHUFFLE_FILTER) {
-        let buffer_size = chunk_buffer_out.byteLength;
-        var unshuffled_view = new Uint8Array(buffer_size);
-        let step = Math.floor(buffer_size / itemsize);
-        let shuffled_view = new DataView(chunk_buffer_out);
-        for (var j=0; j<itemsize; j++) {
-          for (var i=0; i<step; i++) {
-            unshuffled_view[j + i*itemsize] = shuffled_view.getUint8(j*step + i);
-          }
-        }
-        chunk_buffer_out = unshuffled_view.buffer;
-      }
-      else if (filter_id == FLETCH32_FILTER) {
-        _verify_fletcher32(chunk_buffer_out);
-        //# strip off 4-byte checksum from end of buffer
-        chunk_buffer_out = chunk_buffer_out.slice(0, -4);
+      if (FILTERS.has(filter_id)) {
+        return FILTERS.get(filter_id)(buf, itemsize);
       }
       else {
-          throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
+        throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
       }
     }
-    return chunk_buffer_out;
   }   
 }
 
@@ -596,14 +572,3 @@ function _verify_fletcher32(chunk_buffer) {
   }
   return true
 }
-
-
-
-//# IV.A.2.l The Data Storage - Filter Pipeline message
-var RESERVED_FILTER = 0;
-export const GZIP_DEFLATE_FILTER = 1;
-export const SHUFFLE_FILTER = 2;
-export const FLETCH32_FILTER = 3;
-var SZIP_FILTER = 4;
-var NBIT_FILTER = 5;
-var SCALEOFFSET_FILTER = 6;

@@ -1,5 +1,6 @@
 import {DataObjects} from './dataobjects.js';
 import {SuperBlock} from './misc-low-level.js';
+export { Filters } from './filters.js';
 
 export const __version__ = '0.4.0.dev';
 
