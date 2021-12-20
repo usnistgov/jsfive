@@ -307,12 +307,13 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
       if (Filters.has(filter_id)) {
-        return Filters.get(filter_id)(buf, itemsize);
+        buf = Filters.get(filter_id)(buf, itemsize);
       }
       else {
         throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
       }
     }
+    return buf;
   }   
 }
 
@@ -535,38 +536,4 @@ export class BTreeV2GroupOrders extends BTreeV2 {
     offset += 8;
     return new Map([['creationorder', creationorder], ['heapid', buf.slice(offset, offset+7)]]);
   }
-}
-
-
-function _verify_fletcher32(chunk_buffer) {
-  //""" Verify a chunk with a fletcher32 checksum. """
-  //# calculate checksums
-  var odd_chunk_buffer = ((chunk_buffer.byteLength % 2) != 0);
-  var data_length = chunk_buffer.byteLength - 4;
-  var view = new DataView64(chunk_buffer);
-
-  var sum1 = 0;
-  var sum2 = 0;
-  for (var offset=0; offset<(data_length-1); offset+=2) {
-    let datum = view.getUint16(offset, true); // little-endian
-    sum1 = (sum1 + datum) % 65535
-    sum2 = (sum2 + sum1) % 65535
-  }
-  if (odd_chunk_buffer) {
-    // process the last item:
-    let datum = view.getUint8(data_length-1);
-    sum1 = (sum1 + datum) % 65535
-    sum2 = (sum2 + sum1) % 65535
-  }
-
-  //# extract stored checksums
-  var [ref_sum1, ref_sum2] = struct.unpack_from('>HH', chunk_buffer, data_length); // .fromstring(chunk_buffer[-4:], '>u2')
-  ref_sum1 = ref_sum1 % 65535
-  ref_sum2 = ref_sum2 % 65535
-
-  //# compare
-  if (sum1 != ref_sum1 || sum2 != ref_sum2) {
-    throw 'ValueError("fletcher32 checksum invalid")';
-  }
-  return true
 }
