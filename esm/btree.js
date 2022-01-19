@@ -1,5 +1,5 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
-import {default as pako} from '../web_modules/pako-es.js';
+import pako from '../node_modules/pako/dist/pako.esm.mjs';
 
 const zlib = {
   decompress: function(buf) {
