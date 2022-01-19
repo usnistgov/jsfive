@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
-    "pako-es": "^1.0.9"
+    "pako": "^2.0.4"
   },
   "devDependencies": {
     "esbuild": "^0.14.2"
