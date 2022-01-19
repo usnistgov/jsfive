@@ -1,8 +1,6 @@
 import {DataObjects} from './dataobjects.js';
 import {SuperBlock} from './misc-low-level.js';
 
-export const __version__ = '0.4.0.dev';
-
 export class Group {
   /*
     An HDF5 Group which may hold attributes, datasets, or other groups.
