@@ -1,13 +1,13 @@
 {
   "name": "jsfive",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "A pure javascript HDF5 file reader, based on pyfive",
   "main": "./dist/index.js",
   "exports": "./dist/index.js",
   "browser": "dist/hdf5.js",
   "scripts": {
     "build": "esbuild browser_index.js --bundle --sourcemap --target=es2020 --outfile=dist/hdf5.js",
-    "build_node": "esbuild index.js --bundle --platform=node --outfile=dist/index.js"
+    "build_node": "esbuild index.js --bundle --sourcemap --platform=node --outfile=dist/index.js"
   },
   "repository": {
     "type": "git",
