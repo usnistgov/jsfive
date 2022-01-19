@@ -1,0 +1,38 @@
+name: Publish
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  release:
+    types: [published]
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  do_release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - name: Build library
+        run: |
+          npm install
+          npm run build
+          npm run build_node
+          npm pack
+          echo "NPM_TGZ=$(ls jsfive*.tgz)" >> $GITHUB_ENV
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{ env.NPM_TGZ }}
+      - name: Update current release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: johnwbyrd/update-release@v1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            ${{ env.NPM_TGZ }}
