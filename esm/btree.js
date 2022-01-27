@@ -306,8 +306,9 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       }
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
+      let client_data = pipeline_entry.get('client_data');
       if (Filters.has(filter_id)) {
-        buf = Filters.get(filter_id)(buf, itemsize);
+        buf = Filters.get(filter_id)(buf, itemsize, client_data);
       }
       else {
         throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
