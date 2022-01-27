@@ -20,61 +20,73 @@ If you need to write HDF5 files in javascript consider using h5wasm ([github](ht
     * currently this gives an upper limit of 9007199254740991 bytes, which is a lot. (~10<sup>7</sup> GB)
 * currently the getitem syntax is not supported, but it will likely be soon, for browsers that support object Proxy (not IE), so you have to do say f.get('entry/dataset') instead of f['entry/dataset']
 
-## Installation/use
-### Browser:
-Clone this repo to somewhere accessible to your webpage, then in your main module (entrypoint) for your app import it as e.g. 
-
-    import * as hdf5 from './jsfive/index.js';
-
+## Installation
+### CDN:
 If you want to use it as an old-style ES5 script, you can use the pre-built library in /dist/hdf5.js e.g.
+```html
+    <script src="https://cdn.jsdelivr.net/npm/jsfive@0.3.7/dist/hdf5.js"></script>
+```
 
-    <script src="https://cdn.jsdelivr.net/gh/usnistgov/jsfive@master/dist/hdf5.js"></script>
-    
-Then you can start using it with data from a URL, e.g. 
+### NPM
+To include in a project,  
+```bash
+npm install jsfive
+```
+then in your project
+```js
+import * as hdf5 from 'jsfive';
+// this works in create-react-app too, in 
+// jsfive >= 0.3.7
+```
+or
+```javascript
+const hdf5 = await import("jsfive");
+```
 
-    fetch(file_url)
-      .then(function(response) { 
-        return response.arrayBuffer() 
-      })
-      .then(function(buffer) {
-        var f = new hdf5.File(buffer, filename);
-        // do something with f;
-        // let g = f.get('group');
-        // let d = f.get('group/dataset');
-        // let v = d.value;
-        // let a = d.attrs;
-      });
+## Usage
+With fetch, from the browser:
+```javascript
+fetch(file_url)
+  .then(function(response) { 
+    return response.arrayBuffer() 
+  })
+  .then(function(buffer) {
+    var f = new hdf5.File(buffer, filename);
+    // do something with f;
+    // let g = f.get('group');
+    // let d = f.get('group/dataset');
+    // let v = d.value;
+    // let a = d.attrs;
+  });
+```
 
 Or if you want to upload a file to work with, into the browser:
-
-    function loadData() {
-      var file_input = document.getElementById('datafile');
-      var file = file_input.files[0]; // only one file allowed
-      let datafilename = file.name;
-      let reader = new FileReader();
-      reader.onloadend = function(evt) { 
-        let barr = evt.target.result;
-        var f = new hdf5.File(barr, datafilename);
-        // do something with f...
-      }
-      reader.readAsArrayBuffer(file);
-      file_input.value = "";
-    }
-
-### nodejs
-
-    npm install git+https://github.com/usnistgov/jsfive.git
-
-Then e.g. in node REPL:
+```javascript
+function loadData() {
+  var file_input = document.getElementById('datafile');
+  var file = file_input.files[0]; // only one file allowed
+  let datafilename = file.name;
+  let reader = new FileReader();
+  reader.onloadend = function(evt) { 
+    let barr = evt.target.result;
+    var f = new hdf5.File(barr, datafilename);
+    // do something with f...
+  }
+  reader.readAsArrayBuffer(file);
+  file_input.value = "";
+}
 ```
+
+in node REPL (might require --experimental-repl-await for older nodejs)
+```js
 $ node
-Welcome to Node.js v14.17.4.
+Welcome to Node.js v16.13.2.
 Type ".help" for more information.
-> const hdf5 = require("jsfive")
+> const hdf5 = await import("jsfive");
 undefined
 > var fs = require("fs");
 undefined
-> var ab = fs.readFileSync("/home/brian/Downloads/sans4490.nxs.ngv");
+> var ab = fs.readFileSync("/home/brian/Downloads/sans59510.nxs.ngv");
 undefined
 > var f = new hdf5.File(ab.buffer);
 undefined
@@ -84,10 +96,3 @@ undefined
 { NX_class: 'NXentry' }
 > 
 ```
-
-### create-react-app
-in App.js, import as:
-```js
-import * as hdf5 from 'jsfive/dist';
-```
- (if you don't explicitly import dist or dist/index.js it will get the browser library or the ES6 library, neither of which will work as expected)
