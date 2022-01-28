@@ -1,12 +1,5 @@
 import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
-import pako from '../node_modules/pako/dist/pako.esm.mjs';
-
-const zlib = {
-  decompress: function(buf) {
-    let input_array = new Uint8Array(buf);
-    return pako.inflate(input_array).buffer;
-    }
-};
+import { Filters } from './filters.js';
 
 class AbstractBTree {
   //B_LINK_NODE = null;
@@ -302,7 +295,7 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
   _filter_chunk(chunk_buffer, filter_mask, filter_pipeline, itemsize) {
     //""" Apply decompression filters to a chunk of data. """
     let num_filters = filter_pipeline.length;
-    var chunk_buffer_out = chunk_buffer.slice();
+    let buf = chunk_buffer.slice();
     for (var filter_index=num_filters-1; filter_index >=0; filter_index--) {
       //for i, pipeline_entry in enumerate(filter_pipeline[::-1]):
 
@@ -313,32 +306,15 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
       }
       let pipeline_entry = filter_pipeline[filter_index];
       let filter_id = pipeline_entry.get('filter_id');
-      if (filter_id == GZIP_DEFLATE_FILTER) {
-        chunk_buffer_out = zlib.decompress(chunk_buffer_out);
-      }
-
-      else if (filter_id == SHUFFLE_FILTER) {
-        let buffer_size = chunk_buffer_out.byteLength;
-        var unshuffled_view = new Uint8Array(buffer_size);
-        let step = Math.floor(buffer_size / itemsize);
-        let shuffled_view = new DataView(chunk_buffer_out);
-        for (var j=0; j<itemsize; j++) {
-          for (var i=0; i<step; i++) {
-            unshuffled_view[j + i*itemsize] = shuffled_view.getUint8(j*step + i);
-          }
-        }
-        chunk_buffer_out = unshuffled_view.buffer;
-      }
-      else if (filter_id == FLETCH32_FILTER) {
-        _verify_fletcher32(chunk_buffer_out);
-        //# strip off 4-byte checksum from end of buffer
-        chunk_buffer_out = chunk_buffer_out.slice(0, -4);
+      let client_data = pipeline_entry.get('client_data');
+      if (Filters.has(filter_id)) {
+        buf = Filters.get(filter_id)(buf, itemsize, client_data);
       }
       else {
-          throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
+        throw 'NotImplementedError("Filter with id:' + filter_id.toFixed() + ' not supported")';
       }
     }
-    return chunk_buffer_out;
+    return buf;
   }   
 }
 
@@ -562,48 +538,3 @@ export class BTreeV2GroupOrders extends BTreeV2 {
     return new Map([['creationorder', creationorder], ['heapid', buf.slice(offset, offset+7)]]);
   }
 }
-
-
-function _verify_fletcher32(chunk_buffer) {
-  //""" Verify a chunk with a fletcher32 checksum. """
-  //# calculate checksums
-  var odd_chunk_buffer = ((chunk_buffer.byteLength % 2) != 0);
-  var data_length = chunk_buffer.byteLength - 4;
-  var view = new DataView64(chunk_buffer);
-
-  var sum1 = 0;
-  var sum2 = 0;
-  for (var offset=0; offset<(data_length-1); offset+=2) {
-    let datum = view.getUint16(offset, true); // little-endian
-    sum1 = (sum1 + datum) % 65535
-    sum2 = (sum2 + sum1) % 65535
-  }
-  if (odd_chunk_buffer) {
-    // process the last item:
-    let datum = view.getUint8(data_length-1);
-    sum1 = (sum1 + datum) % 65535
-    sum2 = (sum2 + sum1) % 65535
-  }
-
-  //# extract stored checksums
-  var [ref_sum1, ref_sum2] = struct.unpack_from('>HH', chunk_buffer, data_length); // .fromstring(chunk_buffer[-4:], '>u2')
-  ref_sum1 = ref_sum1 % 65535
-  ref_sum2 = ref_sum2 % 65535
-
-  //# compare
-  if (sum1 != ref_sum1 || sum2 != ref_sum2) {
-    throw 'ValueError("fletcher32 checksum invalid")';
-  }
-  return true
-}
-
-
-
-//# IV.A.2.l The Data Storage - Filter Pipeline message
-var RESERVED_FILTER = 0;
-export const GZIP_DEFLATE_FILTER = 1;
-export const SHUFFLE_FILTER = 2;
-export const FLETCH32_FILTER = 3;
-var SZIP_FILTER = 4;
-var NBIT_FILTER = 5;
-var SCALEOFFSET_FILTER = 6;

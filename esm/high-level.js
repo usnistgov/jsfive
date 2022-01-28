@@ -1,5 +1,6 @@
 import {DataObjects} from './dataobjects.js';
 import {SuperBlock} from './misc-low-level.js';
+export { Filters } from './filters.js';
 
 export class Group {
   /*
