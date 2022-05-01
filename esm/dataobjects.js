@@ -293,15 +293,9 @@ export class DataObjects {
         if (dtype_class == 'VLEN_STRING') {
           let character_set = dtype[2];
           var [vlen, vlen_data] = this._vlen_size_and_data(buf, offset);
-          let fmt = '<' + vlen.toFixed() + 's';
-          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
-          if (character_set == 0) {
-            //# ascii character set, return as bytes
-            value[i] = str_data;
-          }
-          else {
-            value[i] = decodeURIComponent(escape(str_data));
-          }
+          const encoding = (character_set == 0) ? "ascii" : "utf-8";
+          const decoder = new TextDecoder(encoding);
+          value[i] = decoder.decode(vlen_data);
           offset += 16
         }
         else if (dtype_class == 'REFERENCE') {
@@ -707,18 +701,12 @@ export class DataObjects {
       }
       else if (dtype_class == 'VLEN_STRING') {
         let character_set = this.dtype[2];
+        const encoding = (character_set == 0) ? "ascii" : "utf-8";
+        const decoder = new TextDecoder(encoding);
         var value = [];
         for (var i = 0; i < fullsize; i++) {
-          var [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
-          let fmt = '<' + vlen.toFixed() + 's';
-          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
-          if (character_set == 0) {
-            //# ascii character set, return as bytes
-            value[i] = str_data;
-          }
-          else {
-            value[i] = decodeURIComponent(escape(str_data));
-          }
+          const [vlen, vlen_data] = this._vlen_size_and_data(this.fh, data_offset);
+          value[i] = decoder.decode(vlen_data);
           data_offset += 16;
         }
         return value;
@@ -753,15 +741,9 @@ export class DataObjects {
         let vlen_data = gheap.objects.get(object_index);
         if (dtype_class == 'VLEN_STRING') {
           let character_set = this.dtype[2];
-          let fmt = '<' + item_size.toFixed() + 's';
-          let str_data = struct.unpack_from(fmt, vlen_data, 0)[0];
-          if (character_set == 0) {
-            //# ascii character set, return as bytes
-            data[i] = str_data;
-          }
-          else {
-            data[i] = decodeURIComponent(escape(str_data));
-          }
+          const encoding = (character_set == 0) ? "ascii" : "utf-8";
+          const decoder = new TextDecoder(encoding);
+          data[i] = decoder.decode(vlen_data);
         }
       }
     }

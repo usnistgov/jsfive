@@ -138,18 +138,14 @@ class Struct {
       let size = this.byte_lengths[f];
       var append_target;
       if (f == 's') {
-        var sarray = new Array();
-        append_target = sarray;
+        output.push(buffer.slice(offset, offset + n));
+        offset += n;
       }
       else {
-        append_target = output;
-      }
-      for (var i = 0; i < n; i++) {
-        append_target.push(view[getter](offset, !big_endian));
-        offset += size;
-      }
-      if (f == 's') {
-        output.push(sarray.reduce(function (a, b) { return a + String.fromCharCode(b) }, ''));
+        for (var i = 0; i < n; i++) {
+          output.push(view[getter](offset, !big_endian));
+          offset += size;
+        }
       }
     }
     return output
@@ -209,15 +205,9 @@ export class DataView64 extends DataView {
   }
 
   getString(byteOffset, littleEndian, length) {
-    var output = "";
-    for (var i = 0; i < length; i++) {
-      let c = this.getUint8(byteOffset + i);
-      if (c) {
-        // filter out zero character codes (padding)
-        output += String.fromCharCode(c);
-      }
-    }
-    return decodeURIComponent(escape(output));
+    const str_buffer = this.buffer.slice(byteOffset, byteOffset + length);
+    const decoder = new TextDecoder();
+    return decoder.decode(str_buffer);
   }
 
   getVLENStruct(byteOffset, littleEndian, length) {
