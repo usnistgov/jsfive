@@ -41,7 +41,10 @@ export class DatatypeMessage {
       return ['REFERENCE', datatype_msg.get('size')];
     }
     else if (datatype_class == DATATYPE_ENUMERATED) {
-      throw "Enumerated datatype class not supported."
+      // enumerated base class datatype message starts at end of
+      // enum datatype message, and offset is already advanced above,
+      // so just run the same function again to get base class:
+      return this.determine_dtype();
     }
     else if (datatype_class == DATATYPE_ARRAY) {
       throw "Array datatype class not supported."
@@ -134,7 +137,7 @@ export class DatatypeMessage {
     return ['VLEN_STRING', padding_type, character_set];
   }
   _determine_dtype_compound(datatype_msg) {
-    throw "not yet implemented!";
+    throw "Compound type not yet implemented!";
   }
 }   
 
