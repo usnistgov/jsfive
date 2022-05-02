@@ -136,9 +136,8 @@ class Struct {
       let f = match[2];
       let getter = this.getters[f];
       let size = this.byte_lengths[f];
-      var append_target;
       if (f == 's') {
-        output.push(buffer.slice(offset, offset + n));
+        output.push(new TextDecoder().decode(buffer.slice(offset, offset + n)));
         offset += n;
       }
       else {
