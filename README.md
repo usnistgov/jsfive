@@ -24,7 +24,7 @@ If you need to write HDF5 files in javascript consider using h5wasm ([github](ht
 ### CDN:
 If you want to use it as an old-style ES5 script, you can use the pre-built library in /dist/hdf5.js e.g.
 ```html
-    <script src="https://cdn.jsdelivr.net/npm/jsfive@0.3.7/dist/hdf5.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsfive@0.3.10/dist/browser/hdf5.js"></script>
 ```
 
 ### NPM
