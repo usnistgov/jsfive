@@ -22,7 +22,6 @@ jobs:
         run: |
           npm install
           npm run build
-          npm run build_node
           npm pack
           echo "NPM_TGZ=$(ls jsfive*.tgz)" >> $GITHUB_ENV
       - name: Upload artifact
