@@ -566,7 +566,7 @@ export class DataObjects {
     //""" Retrieve links from symbol table message. """
     let heap = new FractalHeap(this.fh, heap_address);
     let btree;
-    if (order_btree_address != UNDEFINED_ADDRESS) {
+    if (order_btree_address != null) {
       btree = new BTreeV2GroupOrders(this.fh, order_btree_address);
     }
     else {
