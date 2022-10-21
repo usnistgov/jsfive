@@ -234,7 +234,7 @@ export class DataObjects {
       dtype = new DatatypeMessage(this.fh, offset).dtype;
     }
     catch (e) {
-      console.log('Attribute ' + name + ' type not implemented, set to null.');
+      console.warn('Attribute ' + name + ' type not implemented, set to null.');
       return [name, null];
     }
 
@@ -566,7 +566,8 @@ export class DataObjects {
     //""" Retrieve links from symbol table message. """
     let heap = new FractalHeap(this.fh, heap_address);
     let btree;
-    if (order_btree_address != null) {
+    const ordered = (order_btree_address != null);
+    if (ordered) {
       btree = new BTreeV2GroupOrders(this.fh, order_btree_address);
     }
     else {
@@ -576,7 +577,8 @@ export class DataObjects {
     for (let record of btree.iter_records()) {
       let data = heap.get_data(record.get("heapid"));
       let [creationorder, item] = this._decode_link_msg(data, 0);
-      items.set(creationorder, item);
+      const key = (ordered) ? creationorder : item[0]; // name is item[0];
+      items.set(key, item);
     }
     let sorted_keys = Array.from(items.keys()).sort();
     for (let key of sorted_keys) {
