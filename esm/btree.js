@@ -461,7 +461,7 @@ export class BTreeV2 extends AbstractBTree {
     let fmts = this.address_formats.get(node_level);
     if (node_level != 0) {
       let [offset_size, num1_size, num2_size, offset_fmt, num1_fmt, num2_fmt] = fmts;
-      for (let j=0; j<nrecords; j++) {
+      for (let j=0; j<=nrecords; j++) {
         let address_offset = struct.unpack_from(offset_fmt, this.fh, offset)[0];
         offset += offset_size;
         let num1 = struct.unpack_from(num1_fmt, this.fh, offset)[0];
