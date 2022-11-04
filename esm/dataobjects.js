@@ -745,8 +745,10 @@ export class DataObjects {
     await chunk_btree.ready;
     const dtype = await this.dtype;
     const shape = await this.shape;
-    let data = chunk_btree.construct_data_from_chunks(
-      await this.chunks, shape, dtype, this.filter_pipeline);
+    const chunks = await this.chunks;
+    const filter_pipeline = await this.get_filter_pipeline();
+    let data = await chunk_btree.construct_data_from_chunks(
+      chunks, shape, dtype, filter_pipeline);
     if (dtype instanceof Array && /^VLEN/.test(dtype[0])) {
       // VLEN data
       let dtype_class = dtype[0];
