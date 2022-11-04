@@ -1,4 +1,4 @@
-import {_structure_size, _unpack_struct_from} from './core.js';
+import {_structure_size, _unpack_struct_from_async} from './core.js';
 
 export class DatatypeMessage {
   //""" Representation of a HDF5 Datatype Message. """
@@ -9,9 +9,9 @@ export class DatatypeMessage {
     this.offset = offset;
     this.dtype = this.determine_dtype();
   }
-  determine_dtype() {
+  async determine_dtype() {
     //""" Return the dtype (often numpy-like) for the datatype message.  """
-    let datatype_msg = _unpack_struct_from(DATATYPE_MSG, this.buf, this.offset);
+    let datatype_msg = await _unpack_struct_from_async(DATATYPE_MSG, this.buf, this.offset);
     this.offset += DATATYPE_MSG_SIZE
     //# last 4 bits
     let datatype_class = datatype_msg.get('class_and_version') & 0x0F;

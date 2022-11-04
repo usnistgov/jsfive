@@ -44,7 +44,7 @@ export class Group {
    * @param {boolean} [getterProxy=false]
    * @returns {Group}
    */
-  constructor(name, dataobjects, parent, getterProxy=false) {
+  constructor(name, parent) {
     if (parent == null) {
       this.parent = this;
       this.file = this;
@@ -54,14 +54,13 @@ export class Group {
       this.file = parent.file;
     }
     this.name = name;
-
-    this._links = dataobjects.get_links();
+  }
+  
+  async init(dataobjects) {
+    this._links = await dataobjects.get_links();
     this._dataobjects = dataobjects;
     this._attrs = null;  // cached property
     this._keys = null;
-    if (getterProxy) {
-      return new Proxy(this, groupGetHandler);
-    }
   }
 
   get keys() {
@@ -91,7 +90,7 @@ export class Group {
     return obj
   }
 
-  get(y) {
+  async get(y) {
     //""" x.__getitem__(y) <==> x[y] """
     if (typeof(y) == 'number') {
       return this._dereference(y);
@@ -132,6 +131,8 @@ export class Group {
     }
 
     var dataobjs = new DataObjects(this.file._fh, link_target);
+    await dataobjs.ready;
+
     if (dataobjs.is_dataset) {
       if (additional_obj != '.') {
         throw obj_name + ' is a dataset, not a group';
@@ -139,7 +140,8 @@ export class Group {
       return new Dataset(obj_name, dataobjs, this);
     }
     else {
-      var new_group = new Group(obj_name, dataobjs, this);
+      var new_group = new Group(obj_name, this);
+      await new_group.init(dataobjs);
       return new_group.get(additional_obj);
     }
   }
@@ -233,17 +235,29 @@ export class File extends Group {
     //    if not hasattr(filename, 'seek'):
     //        raise ValueError(
     //            'File like object must have a seek method')
-    
-    var superblock = new SuperBlock(fh, 0);
-    var offset = superblock.offset_to_dataobjects;
-    var dataobjects = new DataObjects(fh, offset);
-    super('/', dataobjects, null);
-    this.parent = this;
+    super('/', null);
+    this.ready = this.init(fh, filename);
+  }
 
+  async init(fh, filename) {
+    var superblock = new SuperBlock(fh, 0);
+    await superblock.ready;
+    var offset = await superblock.get_offset_to_dataobjects();
+    var dataobjects = new DataObjects(fh, offset);
+    await dataobjects.ready;
+    //   constructor(name, dataobjects, parent, getterProxy=false) {
+    this.parent = this;
+    this.file = this;
+    this.name = '/';
+
+    this._links = await dataobjects.get_links();
+    this._dataobjects = dataobjects;
+    this._attrs = null;  // cached property
+    this._keys = null;
+    
     this._fh = fh
     this.filename = filename || '';
 
-    this.file = this;
     this.mode = 'r';
     this.userblock_size = 0;
   }
@@ -352,7 +366,7 @@ export class Dataset extends Array {
   }
 
   get fillvalue() {
-    return this._dataobjects.fillvalue;
+    return this._dataobjects.get_fillvalue();
   }
 }
 

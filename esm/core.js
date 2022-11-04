@@ -1,3 +1,14 @@
+export async function _unpack_struct_from_async(structure, async_buf, offset = 0) {
+  var output = new Map();
+  for (let [key, fmt] of structure.entries()) {
+    let value = await struct.unpack_from_async('<' + fmt, async_buf, offset);
+    offset += struct.calcsize(fmt);
+    if (value.length == 1) { value = value[0] };
+    output.set(key, value);
+  }
+  return output
+}
+
 export function _unpack_struct_from(structure, buf, offset = 0) {
   var output = new Map();
   for (let [key, fmt] of structure.entries()) {
@@ -124,9 +135,12 @@ class Struct {
     }
     return big_endian;
   }
-  unpack_from(fmt, buffer, offset) {
+  async unpack_from_async(fmt, async_buf, offset) {
     var offset = Number(offset || 0);
-    var view = new DataView64(buffer, 0);
+    const total_size = this.calcsize(fmt);
+    const local_buffer = await async_buf.slice(offset, offset + total_size);
+    let local_offset = 0;
+    var view = new DataView64(local_buffer);
     var output = [];
     var big_endian = this._is_big_endian(fmt);
     var match;
@@ -137,13 +151,42 @@ class Struct {
       let getter = this.getters[f];
       let size = this.byte_lengths[f];
       if (f == 's') {
-        output.push(new TextDecoder().decode(buffer.slice(offset, offset + n)));
-        offset += n;
+        output.push(new TextDecoder().decode(local_buffer.slice(local_offset, local_offset + n)));
+        local_offset += n;
       }
       else {
         for (var i = 0; i < n; i++) {
-          output.push(view[getter](offset, !big_endian));
-          offset += size;
+          output.push(view[getter](local_offset, !big_endian));
+          local_offset += size;
+        }
+      }
+    }
+    return output
+  }
+
+  unpack_from(fmt, buffer, offset) {
+    var offset = Number(offset || 0);
+    const total_size = this.calcsize(fmt);
+    const local_buffer = buffer.slice(offset, offset + total_size);
+    let local_offset = 0;
+    var view = new DataView64(local_buffer);
+    var output = [];
+    var big_endian = this._is_big_endian(fmt);
+    var match;
+    var regex = new RegExp(this.fmt_size_regex, 'g');
+    while ((match = regex.exec(fmt)) !== null) {
+      let n = parseInt(match[1] || 1, 10);
+      let f = match[2];
+      let getter = this.getters[f];
+      let size = this.byte_lengths[f];
+      if (f == 's') {
+        output.push(new TextDecoder().decode(local_buffer.slice(local_offset, local_offset + n)));
+        local_offset += n;
+      }
+      else {
+        for (var i = 0; i < n; i++) {
+          output.push(view[getter](local_offset, !big_endian));
+          local_offset += size;
         }
       }
     }
@@ -223,11 +266,28 @@ export function bitSize(integer) {
   return integer.toString(2).length;
 }
 
-export function _unpack_integer(nbytes, fh, offset = 0, littleEndian = true) {
+export async function _unpack_integer_async(nbytes, async_buf, offset = 0, littleEndian = true) {
   //let padded_bytelength = 1 << Math.ceil(Math.log2(nbytes));
   //let format = _int_format(padded_bytelength);
   //let buf = new ArrayBuffer(padded_bytelength); // all zeros to start
-  let bytes = new Uint8Array(fh.slice(offset, offset+nbytes));
+  const local_buffer = await async_buf.slice(offset, offset+nbytes);
+  let bytes = new Uint8Array(local_buffer);
+  if (!littleEndian) {
+    bytes.reverse();
+  }
+  let integer = bytes.reduce((accumulator, currentValue, index) => accumulator + (currentValue << (index * 8)), 0);
+  return integer;
+  
+  //new Uint8Array(buf).set(new Uint8Array(fh.slice(offset, offset + nbytes)));
+  //return struct.unpack_from(format, buf, 0)[0];
+}
+
+export function _unpack_integer(nbytes, buf, offset = 0, littleEndian = true) {
+  //let padded_bytelength = 1 << Math.ceil(Math.log2(nbytes));
+  //let format = _int_format(padded_bytelength);
+  //let buf = new ArrayBuffer(padded_bytelength); // all zeros to start
+  const local_buffer =  buf.slice(offset, offset+nbytes);
+  let bytes = new Uint8Array(local_buffer);
   if (!littleEndian) {
     bytes.reverse();
   }

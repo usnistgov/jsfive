@@ -1,4 +1,4 @@
-import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64} from './core.js';
+import {_unpack_struct_from, _structure_size, struct, dtype_getter, bitSize, DataView64, _unpack_struct_from_async} from './core.js';
 import { Filters } from './filters.js';
 
 class AbstractBTree {
@@ -12,28 +12,28 @@ class AbstractBTree {
     this.depth = null;
   }
 
-  init() {
+  async init() {
     this.all_nodes = new Map();
-    this._read_root_node();
-    this._read_children();
+    await this._read_root_node();
+    await this._read_children();
   }
   
-  _read_children() {
+  async _read_children() {
     // # Leaf nodes: level 0
     // # Root node: level "depth"
     let node_level = this.depth;
     while (node_level > 0) {
       for (var parent_node of this.all_nodes.get(node_level)) {
         for (var child_addr of parent_node.get('addresses')) {
-          this._add_node(this._read_node(child_addr, node_level-1));
+          this._add_node(await this._read_node(child_addr, node_level-1));
         }
       }
       node_level--;
     }
   }
   
-  _read_root_node() {
-    let root_node = this._read_node(this.offset, null);
+  async _read_root_node() {
+    let root_node = await this._read_node(this.offset, null);
     this._add_node(root_node);
     this.depth = root_node.get('node_level');
   }
@@ -48,15 +48,15 @@ class AbstractBTree {
     }
   }
   
-  _read_node(offset, node_level) {
+  async _read_node(offset, node_level) {
     // """ Return a single node in the B-Tree located at a given offset. """
-    node = this._read_node_header(offset, node_level);
+    let node = await this._read_node_header(offset, node_level);
     node.set('keys', []);
     node.set('addresses', []);
     return node
   }
 
-  _read_node_header(offset) {
+  async _read_node_header(offset) {
     //""" Return a single node header in the b-tree located at a give offset. """
     throw "NotImplementedError: must define _read_node_header in implementation class";
   }
@@ -80,9 +80,9 @@ export class BTreeV1 extends AbstractBTree {
     ['right_sibling', 'Q']    // 8 byte addressing
   ])
   
-  _read_node_header(offset, node_level) {
+  async _read_node_header(offset, node_level) {
     // """ Return a single node header in the b-tree located at a give offset. """
-    let node = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
+    let node = await _unpack_struct_from_async(this.B_LINK_NODE, this.fh, offset);
     //assert node['signature'] == b'TREE'
     //assert node['node_type'] == this.NODE_TYPE
     if (node_level != null) {
@@ -106,26 +106,26 @@ export class BTreeV1Groups extends BTreeV1 {
 
   constructor(fh, offset) {
     super(fh, offset);
-    this.init();
+    this.ready = this.init();
   }
 
-  _read_node(offset, node_level) {
+  async _read_node(offset, node_level) {
     // """ Return a single node in the B-Tree located at a given offset. """
-    let node = this._read_node_header(offset, node_level);
+    let node = await this._read_node_header(offset, node_level);
     offset += _structure_size(this.B_LINK_NODE);
     let keys = [];
     let addresses = [];
     let entries_used = node.get('entries_used');
     for (var i=0; i<entries_used; i++) {
-      let key = struct.unpack_from('<Q', this.fh, offset)[0];
+      let key = (await struct.unpack_from_async('<Q', this.fh, offset))[0];
       offset += 8;
-      let address = struct.unpack_from('<Q', this.fh, offset)[0];
+      let address = (await struct.unpack_from_async('<Q', this.fh, offset))[0];
       offset += 8;
       keys.push(key);
       addresses.push(address);
     }
     //# N+1 key
-    keys.push(struct.unpack_from('<Q', this.fh, offset)[0]);
+    keys.push((await struct.unpack_from_async('<Q', this.fh, offset))[0]);
     node.set('keys', keys);
     node.set('addresses', addresses);
     return node;
@@ -152,13 +152,13 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
     //""" initalize. """
     super(fh, offset);
     this.dims = dims;
-    this.init();
+    this.ready = this.init();
   }
 
-  _read_node(offset, node_level) {
+  async _read_node(offset, node_level) {
     //""" Return a single node in the b-tree located at a give offset. """
     //this.fh.seek(offset)
-    let node = this._read_node_header(offset, node_level);
+    let node = await this._read_node_header(offset, node_level);
     offset += _structure_size(this.B_LINK_NODE);
     //assert node['signature'] == b'TREE'
     //assert node['node_type'] == 1
@@ -167,14 +167,14 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
     var addresses = [];
     let entries_used = node.get('entries_used');
     for (var i=0; i<entries_used; i++) {
-      let [chunk_size, filter_mask] = struct.unpack_from('<II', this.fh, offset);
+      let [chunk_size, filter_mask] = await struct.unpack_from_async('<II', this.fh, offset);
       offset += 8;
       let fmt = '<' + this.dims.toFixed() + 'Q';
       let fmt_size = struct.calcsize(fmt);
-      let chunk_offset = struct.unpack_from(fmt, this.fh, offset);
+      let chunk_offset = await struct.unpack_from_async(fmt, this.fh, offset);
       //console.log(struct.unpack_from('<8B', this.fh, offset));
       offset += fmt_size;
-      let chunk_address = struct.unpack_from('<Q', this.fh, offset)[0];
+      let chunk_address = (await struct.unpack_from_async('<Q', this.fh, offset))[0];
       offset += 8;
 
       keys.push(new Map([
@@ -189,7 +189,7 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
     return node
   }
 
-  construct_data_from_chunks(chunk_shape, data_shape, dtype, filter_pipeline) {
+  async construct_data_from_chunks(chunk_shape, data_shape, dtype, filter_pipeline) {
     //""" Build a complete data array from chunks. """
     var true_dtype;
     var item_getter, item_big_endian, item_size;
@@ -248,10 +248,10 @@ export class BTreeV1RawDataChunks extends BTreeV1 {
         let addr = node_addresses[ik];
         var chunk_buffer;
         if (filter_pipeline == null) {
-          chunk_buffer = this.fh.slice(addr, addr + chunk_buffer_size);
+          chunk_buffer = await this.fh.slice(addr, addr + chunk_buffer_size);
         }
         else {
-          chunk_buffer = this.fh.slice(addr, addr + node_key.get('chunk_size'));
+          chunk_buffer = await this.fh.slice(addr, addr + node_key.get('chunk_size'));
           let filter_mask = node_key.get('filter_mask');
           chunk_buffer = this._filter_chunk(
               chunk_buffer, filter_mask, filter_pipeline, item_size);
@@ -349,22 +349,22 @@ export class BTreeV2 extends AbstractBTree {
 
   constructor(fh, offset) {
     super(fh, offset);
-    this.init();
+    this.ready = this.init();
   }
 
-  _read_root_node() {
-    let h = this._read_tree_header(this.offset);
+  async _read_root_node() {
+    let h = await this._read_tree_header(this.offset);
     this.address_formats = this._calculate_address_formats(h);
     this.header = h;
     this.depth = h.get("depth");
 
     let address = [h.get("root_address"), h.get("root_nrecords"), h.get("total_nrecords")];
-    let root_node = this._read_node(address, this.depth);
+    let root_node = await this._read_node(address, this.depth);
     this._add_node(root_node);
   }
   
-  _read_tree_header(offset) {
-    let header = _unpack_struct_from(this.B_TREE_HEADER, this.fh, this.offset);
+  async _read_tree_header(offset) {
+    let header = await _unpack_struct_from_async(this.B_TREE_HEADER, this.fh, this.offset);
     //assert header['signature'] == b'BTHD'
     //assert header['node_type'] == this.NODE_TYPE
     return header;
@@ -444,7 +444,7 @@ export class BTreeV2 extends AbstractBTree {
     return ["<B", "<H", "<I", "<Q"][bytelength-1];
   }
   
-  _read_node(address, node_level) {
+  async _read_node(address, node_level) {
     // """ Return a single node in the B-Tree located at a given offset. """
     let [offset, nrecords, ntotalrecords] = address;
     let node = this._read_node_header(offset, node_level);
@@ -452,7 +452,7 @@ export class BTreeV2 extends AbstractBTree {
     let record_size = this.header.get('record_size');
     let keys = [];
     for (let i=0; i<nrecords; i++) {
-      let record = this._parse_record(this.fh, offset, record_size);
+      let record = await this._parse_record(this.fh, offset, record_size);
       offset += record_size;
       keys.push(record);
     }
@@ -462,13 +462,13 @@ export class BTreeV2 extends AbstractBTree {
     if (node_level != 0) {
       let [offset_size, num1_size, num2_size, offset_fmt, num1_fmt, num2_fmt] = fmts;
       for (let j=0; j<=nrecords; j++) {
-        let address_offset = struct.unpack_from(offset_fmt, this.fh, offset)[0];
+        let address_offset = (await struct.unpack_from_async(offset_fmt, this.fh, offset))[0];
         offset += offset_size;
-        let num1 = struct.unpack_from(num1_fmt, this.fh, offset)[0];
+        let num1 = (await struct.unpack_from_async(num1_fmt, this.fh, offset))[0];
         offset += num1_size;
         let num2 = num1;
         if (num2_size > 0) {
-          num2 = struct.unpack_from(num2_fmt, this.fh, offset)[0];
+          num2 = (await struct.unpack_from_async(num2_fmt, this.fh, offset))[0];
           offset += num2_size;
         }
         addresses.push([address_offset, num1, num2]);
@@ -480,9 +480,9 @@ export class BTreeV2 extends AbstractBTree {
     return node
   }
   
-  _read_node_header(offset, node_level) {
+  async _read_node_header(offset, node_level) {
     // """ Return a single node header in the b-tree located at a give offset. """
-    let node = _unpack_struct_from(this.B_LINK_NODE, this.fh, offset);
+    let node = await _unpack_struct_from_async(this.B_LINK_NODE, this.fh, offset);
     //assert node['node_type'] == this.NODE_TYPE
     if (node_level > 0) {
       // Internal node (has children)
@@ -519,10 +519,11 @@ export class BTreeV2GroupNames extends BTreeV2 {
   */
   NODE_TYPE = 5
 
-  _parse_record(buf, offset, size) {
-    let namehash = struct.unpack_from("<I", buf, offset)[0];
+  async _parse_record(buf, offset, size) {
+    let namehash = (await struct.unpack_from_async("<I", buf, offset))[0];
     offset += 4;
-    return new Map([['namehash', namehash], ['heapid', buf.slice(offset, offset+7)]]);
+    const heapid = await buf.slice(offset, offset+7);
+    return new Map([['namehash', namehash], ['heapid', heapid]]);
   }
 }
 
@@ -533,9 +534,10 @@ export class BTreeV2GroupOrders extends BTreeV2 {
   */    
   NODE_TYPE = 6
 
-  _parse_record(buf, offset, size) {
-    let creationorder = struct.unpack_from("<Q", buf, offset)[0];
+  async _parse_record(buf, offset, size) {
+    let creationorder = (await struct.unpack_from_async("<Q", buf, offset))[0];
     offset += 8;
-    return new Map([['creationorder', creationorder], ['heapid', buf.slice(offset, offset+7)]]);
+    const heapid = await buf.slice(offset, offset+7);
+    return new Map([['creationorder', creationorder], ['heapid', heapid]]);
   }
 }

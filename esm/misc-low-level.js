@@ -1,15 +1,19 @@
-import { _structure_size, _padded_size, _unpack_struct_from, struct, assert, _unpack_integer, bitSize } from './core.js';
+import { _structure_size, _padded_size, _unpack_struct_from, struct, assert, _unpack_integer, bitSize, _unpack_struct_from_async } from './core.js';
 
 export class SuperBlock {
   constructor(fh, offset) {
-    let version_hint = struct.unpack_from('<B', fh, offset + 8);
+    this.ready = this.init(fh, offset);
+  }
+
+  async init(fh, offset) {
+    let version_hint = await struct.unpack_from_async('<B', fh, offset + 8);
     var contents;
     if (version_hint == 0) {
-      contents = _unpack_struct_from(SUPERBLOCK_V0, fh, offset);
+      contents = await _unpack_struct_from_async(SUPERBLOCK_V0, fh, offset);
       this._end_of_sblock = offset + SUPERBLOCK_V0_SIZE;
     }
     else if (version_hint == 2 || version_hint == 3) {
-      contents = _unpack_struct_from(SUPERBLOCK_V2_V3, fh, offset);
+      contents = await _unpack_struct_from_async(SUPERBLOCK_V2_V3, fh, offset);
       this._end_of_sblock = offset + SUPERBLOCK_V2_V3_SIZE;
     } else {
       throw ("unsupported superblock version: " + version_hint.toFixed())
@@ -26,10 +30,13 @@ export class SuperBlock {
     this._root_symbol_table = null;
     this._fh = fh;
   }
-  get offset_to_dataobjects() {
+
+  async get_offset_to_dataobjects() {
     //""" The offset to the data objects collection for the superblock. """
     if (this.version == 0) {
       var sym_table = new SymbolTable(this._fh, this._end_of_sblock, true);
+      await sym_table.ready;
+
       this._root_symbol_table = sym_table
       return sym_table.group_offset;
     }
@@ -49,14 +56,16 @@ export class Heap {
   """
   */
   constructor(fh, offset) {
+    this.ready = this.init(fh, offset);
+  }
     //""" initalize. """
-
+  async init(fh, offset) {
     //fh.seek(offset)
-    let local_heap = _unpack_struct_from(LOCAL_HEAP, fh, offset);
+    let local_heap = await _unpack_struct_from_async(LOCAL_HEAP, fh, offset);
     assert(local_heap.get('signature') == 'HEAP');
     assert(local_heap.get('version') == 0);
     let data_offset = local_heap.get('address_of_data_segment');
-    let heap_data = fh.slice(data_offset, data_offset + local_heap.get('data_segment_size'));
+    let heap_data = await fh.slice(data_offset, data_offset + local_heap.get('data_segment_size'));
     local_heap.set('heap_data', heap_data);
     this._contents = local_heap;
     this.data = heap_data;
@@ -78,6 +87,10 @@ export class SymbolTable {
   """
   */
   constructor(fh, offset, root = false) {
+    this.ready = this.init(fh, offset, root);
+  }
+
+  async init(fh, offset, root) {
     //""" initialize, root=True for the root group, False otherwise. """
     var node;
     if (root) {
@@ -86,14 +99,14 @@ export class SymbolTable {
       node = new Map([['symbols', 1]]);
     }
     else {
-      node = _unpack_struct_from(SYMBOL_TABLE_NODE, fh, offset);
+      node = await _unpack_struct_from_async(SYMBOL_TABLE_NODE, fh, offset);
       if (node.get('signature') != 'SNOD') { throw "incorrect node type" }
       offset += SYMBOL_TABLE_NODE_SIZE;
     }
     var entries = [];
     var n_symbols = node.get('symbols');
     for (var i = 0; i < n_symbols; i++) {
-      entries.push(_unpack_struct_from(SYMBOL_TABLE_ENTRY, fh, offset))
+      entries.push(await _unpack_struct_from_async(SYMBOL_TABLE_ENTRY, fh, offset))
       offset += SYMBOL_TABLE_ENTRY_SIZE;
     }
     if (root) {
@@ -101,6 +114,7 @@ export class SymbolTable {
     }
     this.entries = entries
     this._contents = node
+    return this;
   }
 
   assign_name(heap) {
@@ -141,12 +155,16 @@ export class GlobalHeap {
   HDF5 Global Heap collection.
   */
   constructor(fh, offset) {
-    let header = _unpack_struct_from(GLOBAL_HEAP_HEADER, fh, offset);
+    this.ready = this.init(fh, offset);
+  }
+
+  async init(fh, offset) {
+    let header = await _unpack_struct_from_async(GLOBAL_HEAP_HEADER, fh, offset);
     offset += GLOBAL_HEAP_HEADER_SIZE;
     //assert(header.get('signature') == 'GCOL');
     //assert(header.get('version') == 1);
     let heap_data_size = header.get('collection_size') - GLOBAL_HEAP_HEADER_SIZE;
-    let heap_data = fh.slice(offset, offset + heap_data_size);
+    let heap_data = await fh.slice(offset, offset + heap_data_size);
     //assert(heap_data.byteLength == heap_data_size); //# check for early end of file
 
     this.heap_data = heap_data;
@@ -182,7 +200,11 @@ export class FractalHeap {
 
   constructor(fh, offset) {
     this.fh = fh;
-    let header = _unpack_struct_from(FRACTAL_HEAP_HEADER, fh, offset);
+    this.ready = this.init(offset);
+  }
+
+  async init(offset) {
+    let header = await _unpack_struct_from_async(FRACTAL_HEAP_HEADER, this.fh, offset);
     offset += _structure_size(FRACTAL_HEAP_HEADER);
     assert(header.get('signature') == 'FRHP');
     assert(header.get('version') == 0);
@@ -253,12 +275,12 @@ export class FractalHeap {
       nrows = header.get("indirect_current_rows_count");
     }
     if (nrows > 0) {
-      for (let data of this._iter_indirect_block(fh, root_address, nrows)) {
+      for await (let data of this._iter_indirect_block(this.fh, root_address, nrows)) {
         managed.push(data);
       }
     }
     else {
-      let data = this._read_direct_block(fh, root_address, start_block_size);
+      let data = await this._read_direct_block(this.fh, root_address, start_block_size);
       managed.push(data);
     }
     let data_size = managed.reduce((p, c) => p + c.byteLength, 0);
@@ -268,8 +290,8 @@ export class FractalHeap {
     this.managed = combined.buffer;
   }
 
-  _read_direct_block(fh, offset, block_size) {
-    let data = fh.slice(offset, offset + block_size);
+  async _read_direct_block(fh, offset, block_size) {
+    let data = await fh.slice(offset, offset + block_size);
     let header = _unpack_struct_from(this.direct_block_header, data)
     assert(header.get("signature") == "FHDB");
     return data;
@@ -316,8 +338,8 @@ export class FractalHeap {
     return Math.ceil(nbits / 8);
   }
 
-  * _iter_indirect_block(fh, offset, nrows) {
-    let header = _unpack_struct_from(this.indirect_block_header, fh, offset);
+  async * _iter_indirect_block(fh, offset, nrows) {
+    let header = await _unpack_struct_from_async(this.indirect_block_header, fh, offset);
     offset += this.indirect_block_header_size;
     assert(header.get("signature") == "FHIB");
     let block_offset_bytes = header.get("block_offset");
@@ -329,7 +351,7 @@ export class FractalHeap {
 
     let direct_blocks = [];
     for (let i = 0; i < ndirect; i++) {
-      let address = struct.unpack_from('<Q', fh, offset)[0]
+      let address = (await struct.unpack_from_async('<Q', fh, offset))[0]
       offset += 8;
       if (address == UNDEFINED_ADDRESS) {
         break
@@ -340,7 +362,7 @@ export class FractalHeap {
 
     let indirect_blocks = [];
     for (let i = ndirect; i < ndirect + nindirect; i++) {
-      let address = struct.unpack_from('<Q', fh, offset)[0];
+      let address = (await struct.unpack_from_async('<Q', fh, offset))[0];
       offset += 8;
       if (address == UNDEFINED_ADDRESS) {
         break
@@ -350,12 +372,12 @@ export class FractalHeap {
       indirect_blocks.push([address, nrows]);
     }
     for (let [address, block_size] of direct_blocks) {
-      let obj = this._read_direct_block(fh, address, block_size);
+      let obj = await this._read_direct_block(fh, address, block_size);
       yield obj
     }
 
     for (let [address, nrows] of indirect_blocks) {
-      for (let obj of this._iter_indirect_block(fh, address, nrows)) {
+      for await (let obj of this._iter_indirect_block(fh, address, nrows)) {
         yield obj;
       }
     }
