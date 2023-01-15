@@ -40,6 +40,8 @@ export class DataObjects {
     this._chunks = null;
     this._chunk_dims = null;
     this._chunk_address = null;
+
+
   }
 
   get dtype() {

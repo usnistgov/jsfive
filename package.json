@@ -34,10 +34,15 @@
   },
   "homepage": "https://github.com/usnistgov/jsfive#readme",
   "dependencies": {
-    "pako": "^2.0.4"
+    "pako": "^2.0.4",
+    "node-fetch": "^2.6.0"
   },
   "devDependencies": {
-    "esbuild": "^0.14.2"
+    "esbuild": "^0.14.2",
+    "esm": "^3.2.25",
+    "chai": "^4.2.0",
+    "esm": "^3.2.25",
+    "mocha": "^8.1.3"
   },
   "publishConfig": {
     "access": "public"
