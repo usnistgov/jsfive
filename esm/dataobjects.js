@@ -722,6 +722,9 @@ export class DataObjects {
   _get_chunked_data(offset) {
     //""" Return data which is chunked. """
     this._get_chunk_params();
+    if (this._chunk_address == UNDEFINED_ADDRESS) {
+      return [];
+    }
     var chunk_btree = new BTreeV1RawDataChunks(
       this.fh, this._chunk_address, this._chunk_dims);
     let data = chunk_btree.construct_data_from_chunks(
