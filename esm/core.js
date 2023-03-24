@@ -78,6 +78,7 @@ class Struct {
       "L": "getUint32",
       "q": "getInt64",
       "Q": "getUint64",
+      "e": "getFloat16",
       "f": "getFloat32",
       "d": "getFloat64"
     }
@@ -93,6 +94,7 @@ class Struct {
       "L": 4,
       "q": 8,
       "Q": 8,
+      "e": 2,
       "f": 4,
       "d": 8
     }
@@ -165,7 +167,36 @@ var MIN_INT64 = -1n << 63n;
 var MAX_UINT64 = 1n << 64n;
 var MIN_UINT64 = 0n;
 
+
+function decodeFloat16(low, high) {
+  // decode IEEE 754 half-precision (2 bytes)
+  let sign = (high & 0b10000000) >> 7;
+  let exponent = (high & 0b01111100) >> 2;
+  let fraction = ((high & 0b00000011) << 8) + low;
+  
+  let magnitude;
+  if (exponent == 0b11111) {
+    magnitude = (fraction == 0) ? Infinity : NaN;
+  }
+  else if (exponent == 0) {
+    magnitude = 2**-14 * (fraction / 1024);
+  }
+  else {
+    magnitude = 2**(exponent - 15) * (1 + (fraction/1024));
+  }
+  
+  return (sign) ? -magnitude : magnitude;
+}
+
 export class DataView64 extends DataView {
+  getFloat16(byteOffset, littlEndian) {
+    // little-endian by default
+    let bytes = [this.getUint8(byteOffset), this.getUint8(byteOffset + 1)]
+    if (!littlEndian) bytes.reverse();
+    let [low, high] = bytes;
+    return decodeFloat16(low, high);
+  }
+
   getUint64(byteOffset, littleEndian) {
     // split 64-bit number into two 32-bit (4-byte) parts
     const left = BigInt(this.getUint32(byteOffset, littleEndian));
