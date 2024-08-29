@@ -2,7 +2,7 @@ import { _structure_size, _padded_size, _unpack_struct_from, struct, assert, _un
 
 export class SuperBlock {
   constructor(fh, offset) {
-    let version_hint = struct.unpack_from('<B', fh, offset + 8);
+    let version_hint = struct.unpack_from('<B', fh, offset + 8)[0];
     var contents;
     if (version_hint == 0) {
       contents = _unpack_struct_from(SUPERBLOCK_V0, fh, offset);
