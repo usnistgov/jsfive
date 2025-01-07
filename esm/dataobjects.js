@@ -128,7 +128,8 @@ export class DataObjects {
         filter_info.set('name', name);
         let client_values = struct.unpack_from(`<${num_client_values}i`, buf, offset);
         offset += (4 * num_client_values);
-        filter_info.set('client_data_values', client_values);
+        filter_info.set('client_data', client_values);
+        filter_info.set('client_data_values', num_client_values);
         filters.push(filter_info);
       }
     }
