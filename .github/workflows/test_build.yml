@@ -10,15 +10,18 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
 
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version: '22'
       - name: Build library
         run: |
           npm install
           npm run build
+      - name: Test library
+        run: |
+          node --test
