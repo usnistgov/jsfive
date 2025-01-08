@@ -12,16 +12,27 @@ jobs:
 
   do_release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: '14'
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
       - name: Build library
         run: |
           npm install
           npm run build
+      - name: Publish to npmjs
+        if: startsWith(github.ref, 'refs/tags')
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Pack library
+        run: |
           npm pack
           echo "NPM_TGZ=$(ls jsfive*.tgz)" >> $GITHUB_ENV
       - name: Upload artifact
