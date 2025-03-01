@@ -37,7 +37,7 @@
     "pako": "^2.0.4"
   },
   "devDependencies": {
-    "esbuild": "^0.24.2"
+    "esbuild": "^0.25.0"
   },
   "publishConfig": {
     "access": "public"
