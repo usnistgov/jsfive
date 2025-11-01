@@ -35,7 +35,7 @@ jobs:
           npm pack
           echo "NPM_TGZ=$(ls jsfive*.tgz)" >> $GITHUB_ENV
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           path: ${{ env.NPM_TGZ }}
       - name: Update current release
