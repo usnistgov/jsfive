@@ -13,7 +13,8 @@ jobs:
   do_release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v6
       - name: setup node
@@ -27,9 +28,7 @@ jobs:
           npm run build
       - name: Publish to npmjs
         if: startsWith(github.ref, 'refs/tags')
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish *.tgz --provenance --access public
       - name: Pack library
         run: |
           npm pack
