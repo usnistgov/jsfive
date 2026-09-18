@@ -20,8 +20,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: '26'
       - name: Build library
         run: |
           npm install
