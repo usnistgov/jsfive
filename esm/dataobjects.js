@@ -391,6 +391,11 @@ export class DataObjects {
     var msg_data = buf.slice(offset, offset += block_size);
 
     var object_header_blocks = [[block_offset, block_size]];
+    // A continuation message can point at a block that is already queued, including
+    // the block it lives in, in which case following every message forever grows
+    // object_header_blocks until the process runs out of memory. Each block is only
+    // worth visiting once.
+    var visited_blocks = new Set([block_offset]);
     var current_block = 0;
     var local_offset = 0;
 
@@ -409,7 +414,11 @@ export class DataObjects {
       if (msg.get('type') == OBJECT_CONTINUATION_MSG_TYPE) {
         var [fh_off, size] = struct.unpack_from('<QQ', buf, offset_to_message);
         // skip the "OFHC" signature in v2 continuation objects:
-        object_header_blocks.push([fh_off + 4, size - 4]);
+        let next_offset = fh_off + 4;
+        if (!visited_blocks.has(next_offset)) {
+          visited_blocks.add(next_offset);
+          object_header_blocks.push([next_offset, size - 4]);
+        }
       }
       local_offset += HEADER_MSG_INFO_V2_SIZE + msg.get('size') + creation_order_size;
       msgs.push(msg);
